@@ -9,6 +9,7 @@ from .routers.assignment import router as assignment_router
 from .routers.queue import router as queue_router
 from .routers.status_change import router as status_change_router
 from .routers.verification import router as verification_router
+from . import scheduler as sla_scheduler
 
 router = APIRouter()
 router.include_router(notifications_router, prefix=get_settings().api_prefix)
@@ -25,9 +26,9 @@ def register(app: FastAPI) -> None:
 
 
 def start_scheduler() -> None:
-    """Scheduler registration will be added with the SLA service."""
+    sla_scheduler.start_scheduler()
 
 
 def stop_scheduler() -> None:
-    """Scheduler shutdown will be added with the SLA service."""
+    sla_scheduler.stop_scheduler()
 

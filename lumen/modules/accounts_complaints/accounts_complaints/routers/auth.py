@@ -7,11 +7,29 @@ from ..config import get_settings
 from ..db import get_db
 from ..deps import client_ip, get_current_user, login_limiter, user_agent
 from ..models import User
-from ..schemas import LoginRequest, TokenResponse, UserOut
-from ..security import create_access_token, verify_dummy, verify_password
+from ..schemas import CitizenRegistration, LoginRequest, TokenResponse, UserOut
+from ..security import create_access_token, hash_password, verify_dummy, verify_password
 from ..services import activity_log
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def register_citizen(body: CitizenRegistration, db: Session = Depends(get_db)):
+    email = body.email.strip().lower()
+    if db.scalar(select(User.id).where(User.email == email)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    user = User(
+        email=email,
+        password_hash=hash_password(body.password),
+        full_name=body.full_name.strip(),
+        role="citizen",
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(login_limiter)])

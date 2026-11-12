@@ -8,7 +8,7 @@ are stored in Supabase Storage; MySQL stores their URL and metadata.
 `POST /complaints/{complaint_id}/media` accepts multipart form fields:
 
 - `file`: JPEG, PNG, or WebP image, up to `MEDIA_MAX_SIZE_MB` (10 MB by default)
-- `media_type`: `initial`, `progress`, `before`, `after`, or `other`
+- `media_type`: `initial`, `progress`, or `other`
 - `Authorization: Bearer <staff JWT>`
 
 On success it returns the media row ID, complaint ID, type, URL, MIME type,

@@ -56,6 +56,8 @@ def create_complaint(
     db: Session, data: ComplaintCreate, *, actor: User | None, ip_address: str | None
 ) -> Complaint:
     lat, lng = validate_pin(data.latitude, data.longitude)
+    if actor is None or actor.role != "citizen":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Citizen login is required to submit a complaint")
     _active_category(db, data.category_id)
     actor_id = actor.id if actor else None
 

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Basic shape check; avoids adding the email-validator dependency.
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
-Role = Literal["official", "pasig_admin"]
+Role = Literal["citizen", "official", "pasig_admin"]
 ComplaintStatus = Literal["open", "in_progress", "resolved", "rejected"]
 
 T = TypeVar("T")
@@ -137,6 +137,19 @@ class ComplaintCreate(Pin):
     photo_url: str | None = Field(default=None, max_length=500)
     reporter_name: str | None = Field(default=None, max_length=150)
     reporter_contact: str | None = Field(default=None, max_length=100)
+
+
+class CitizenRegistration(BaseModel):
+    email: str = Field(max_length=255, pattern=EMAIL_PATTERN)
+    password: str = Field(min_length=8, max_length=72)
+    full_name: str = Field(min_length=1, max_length=150)
+
+    @field_validator("password")
+    @classmethod
+    def password_bytes(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("password must be at most 72 bytes")
+        return v
 
 
 class DuplicateCheckRequest(Pin):

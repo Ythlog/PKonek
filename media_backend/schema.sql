@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS complaint_media (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   complaint_id BIGINT UNSIGNED NOT NULL,
   uploaded_by BIGINT UNSIGNED NOT NULL,
-  media_type ENUM('initial','progress','before','after','other') NOT NULL DEFAULT 'initial',
+  media_type ENUM('initial','progress','other') NOT NULL DEFAULT 'initial',
   storage_url VARCHAR(2048) NOT NULL,
   mime_type VARCHAR(100) NOT NULL,
   file_size_bytes BIGINT UNSIGNED NULL,

@@ -84,7 +84,7 @@ app.add_middleware(
 )
 MAX_BYTES = settings.MEDIA_MAX_SIZE_MB * 1024 * 1024
 ALLOWED_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
-ALLOWED_MEDIA_TYPES = {"initial", "progress", "before", "after", "other"}
+ALLOWED_MEDIA_TYPES = {"initial", "progress", "other"}
 OCR_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 
 
@@ -121,6 +121,24 @@ def require_staff(
         raise unauthorized
     if user["role"] not in ("official", "pasig_admin"):
         raise HTTPException(status_code=403, detail="Staff access is required")
+    return dict(user)
+
+
+def require_user(
+    authorization: Annotated[str | None, Header()] = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    unauthorized = HTTPException(status_code=401, detail="A valid access token is required")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise unauthorized
+    try:
+        claims = jwt.decode(authorization[7:].strip(), settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_id = int(claims["sub"])
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError):
+        raise unauthorized
+    user = db.execute(text("SELECT id, role, is_active FROM users WHERE id = :id"), {"id": user_id}).mappings().first()
+    if not user or not user["is_active"]:
+        raise unauthorized
     return dict(user)
 
 
@@ -207,16 +225,26 @@ async def upload_complaint_media(
     file: Annotated[UploadFile, File()],
     media_type: Annotated[str, Form()] = "initial",
     db: Session = Depends(get_db),
-    actor: dict = Depends(require_staff),
+    actor: dict = Depends(require_user),
 ):
     if media_type not in ALLOWED_MEDIA_TYPES:
         raise HTTPException(status_code=422, detail="Unsupported media_type")
 
     complaint = db.execute(
-        text("SELECT id FROM complaints WHERE id = :id"), {"id": complaint_id}
-    ).first()
+        text("SELECT id, created_by_user_id FROM complaints WHERE id = :id"), {"id": complaint_id}
+    ).mappings().first()
     if complaint is None:
         raise HTTPException(status_code=404, detail="Complaint not found")
+    if actor["role"] == "citizen":
+        if media_type != "initial":
+            raise HTTPException(status_code=403, detail="Citizens may upload complaint evidence only")
+        if complaint["created_by_user_id"] != actor["id"]:
+            raise HTTPException(status_code=403, detail="You can upload only to your own complaint")
+    elif actor["role"] in ("official", "pasig_admin"):
+        if media_type not in {"progress", "other"}:
+            raise HTTPException(status_code=403, detail="Staff uploads must be progress media")
+    else:
+        raise HTTPException(status_code=403, detail="Insufficient role")
 
     payload = await file.read(MAX_BYTES + 1)
     if not payload:

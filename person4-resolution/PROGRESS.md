@@ -45,6 +45,17 @@
 - Added a `BeforeAfterComparer` protocol and default `NullComparer`; non-null result values are stored in `complaint_verifications.ai_comparison` without calling any AI service.
 - Updated `BLOCKED.md` to keep Lumen/CLIP/AI comparison blocked pending Person 3's implementation and contract.
 - Added a full lifecycle integration test from submitted through claim/progress/Done, rejected/reopened, second Done, and confirmed/resolved; includes missing-photo, invalid transition, permission, and double-submit race assertions.
+- Added an explicitly started APScheduler with configured SLA interval and API lifecycle wiring; import has no scheduler side effect.
+- Added an idempotent due_at backfill using domain `due_at`, row-level `FOR UPDATE SKIP LOCKED`, guarded update, and a single `due` SLA event containing deadline and cycle metadata.
+- Added a MySQL integration test that runs backfill twice and verifies only one deadline/event is created; clock injection is supported by the job function.
+- Added scheduler job 2 for SLA warnings at the configured elapsed ratio, using an injected clock, row locking with `SKIP LOCKED`, and cycle-keyed event idempotency.
+- Warning job skips `resolved_pending_verification` complaints and sends `SLA_WARNING` to the assigned official and active officials in the assigned department.
+- Added integration coverage for threshold timing, once-per-cycle notification/event creation, and the paused verification state.
+- Added scheduler job 3 for overdue processing at 100% SLA elapsed: records an overdue event per cycle, optionally reassigns to escalation target level 1, records escalation level 1 with the original department, and sends SLA_OVERDUE/ESCALATED notifications.
+- If no level-1 escalation target exists, job records overdue and does not reassign or emit a level-1 escalation event.
+- Added injected-clock integration tests for cycle idempotency, target/no-target handling, event details, notifications, and verification pause.
+- Added scheduler job 4 at `due_at + category SLA × ESCALATION_L2_GRACE_RATIO`; it reads the current cycle's maximum escalation level, writes one level-2 escalated event, and notifies active pasig_admin users.
+- Added injected-clock integration coverage for grace threshold, level progression, idempotency, admin notifications, and paused verification state.
 
 ## Next
 

@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 
-def verification_rates(connection: Connection, dimension: str) -> list[dict]:
+def verification_rates(connection: Connection, dimension: str, department_id: int | None = None) -> list[dict]:
     if dimension == "official":
         sql="""SELECT CAST(c.assigned_official_id AS CHAR) AS key, u.first_name AS label,
           SUM(v.verdict='confirmed') AS confirmed,SUM(v.verdict='rejected') AS rejected,
@@ -11,6 +11,7 @@ def verification_rates(connection: Connection, dimension: str) -> list[dict]:
           FROM complaints c JOIN complaint_verifications v ON v.complaint_id=c.id
           LEFT JOIN users u ON u.id=c.assigned_official_id
           WHERE c.assigned_official_id IS NOT NULL AND v.verdict IN ('confirmed','rejected')
+            AND (:department_id IS NULL OR c.assigned_department_id=:department_id)
           GROUP BY c.assigned_official_id,u.first_name ORDER BY c.assigned_official_id"""
     elif dimension == "department":
         sql="""SELECT CAST(c.assigned_department_id AS CHAR) AS key,d.name AS label,
@@ -19,13 +20,14 @@ def verification_rates(connection: Connection, dimension: str) -> list[dict]:
           FROM complaints c JOIN complaint_verifications v ON v.complaint_id=c.id
           LEFT JOIN departments d ON d.id=c.assigned_department_id
           WHERE c.assigned_department_id IS NOT NULL AND v.verdict IN ('confirmed','rejected')
+            AND (:department_id IS NULL OR c.assigned_department_id=:department_id)
           GROUP BY c.assigned_department_id,d.name ORDER BY c.assigned_department_id"""
     else:
         raise ValueError("dimension must be official or department")
-    return [dict(row) for row in connection.execute(text(sql)).mappings().all()]
+    return [dict(row) for row in connection.execute(text(sql),{"department_id":department_id}).mappings().all()]
 
 
-def response_time_stats(connection: Connection) -> dict:
+def response_time_stats(connection: Connection, department_id: int | None = None) -> dict:
     row=connection.execute(text("""
       SELECT AVG(first_response_seconds) AS average_first_response_seconds,
              AVG(first_done_seconds) AS average_resolution_seconds,
@@ -41,7 +43,8 @@ def response_time_stats(connection: Connection) -> dict:
         FROM complaints c
         LEFT JOIN complaint_status_history h ON h.complaint_id=c.id
         LEFT JOIN complaint_statuses new_status ON new_status.id=h.new_status_id
+        WHERE (:department_id IS NULL OR c.assigned_department_id=:department_id)
         GROUP BY c.id,c.submitted_at,c.due_at
       ) complaint_metrics
-    """)).mappings().one()
+    """),{"department_id":department_id}).mappings().one()
     return {key:(float(value) if value is not None else None) for key,value in row.items()}

@@ -60,6 +60,8 @@
 - Added seeded MySQL integration test asserting varied card totals and each breakdown.
 - Added Pasig-admin performance metrics for verification rates per official/department (confirmed divided by confirmed plus rejected, excluding auto_timeout) and average first response, average first Done resolution, and SLA compliance.
 - Added seeded integration tests proving citizen rejection lowers the verification rate, auto_timeout is excluded, and time/SLA statistics follow domain metric definitions.
+- Added official dashboard endpoint reusing overview, grouped counts, verification-rate, and response-time aggregate functions with a required department filter.
+- Extended existing aggregate functions with optional department scoping, including reopen-rate subquery; added integration test proving another department's data is absent.
 - Added Pasig-admin daily trend endpoint in Recharts-ready `{date, submitted, resolved, reopened}` shape with inclusive date range, plus paginated level-2 escalation and unassigned complaint lists.
 - Added seeded integration tests asserting daily buckets (including zero days), level-2 red list membership, unassigned membership, and pagination totals.
 

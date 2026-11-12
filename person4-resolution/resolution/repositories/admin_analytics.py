@@ -3,8 +3,9 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 
-def overview(connection: Connection) -> dict:
-    cards=connection.execute(text("""
+def overview(connection: Connection, department_id: int | None = None) -> dict:
+    department_filter = "WHERE c.assigned_department_id=:department_id" if department_id is not None else ""
+    cards=connection.execute(text(f"""
       SELECT COUNT(*) AS total,
         SUM(st.is_terminal=FALSE) AS open_count,
         SUM(st.is_terminal=FALSE AND c.due_at IS NOT NULL AND c.due_at<UTC_TIMESTAMP(3)) AS overdue,
@@ -17,7 +18,8 @@ def overview(connection: Connection) -> dict:
            FROM complaints c2
            JOIN complaint_statuses ss ON ss.id=c2.status_id
            LEFT JOIN complaint_status_history sh ON sh.complaint_id=c2.id
-           WHERE EXISTS (SELECT 1 FROM complaint_status_history done_h JOIN complaint_statuses done_s ON done_s.id=done_h.new_status_id
+           WHERE (:department_id IS NULL OR c2.assigned_department_id=:department_id)
+             AND EXISTS (SELECT 1 FROM complaint_status_history done_h JOIN complaint_statuses done_s ON done_s.id=done_h.new_status_id
                          WHERE done_h.complaint_id=c2.id AND done_s.code='resolved_pending_verification')
            GROUP BY c2.id
          ) x) AS reopen_rate
@@ -26,28 +28,32 @@ def overview(connection: Connection) -> dict:
         SELECT complaint_id,MAX(escalation_level) AS max_level FROM sla_events
         WHERE event_type='escalated' GROUP BY complaint_id
       ) escalation ON escalation.complaint_id=c.id
-    """)).mappings().one()
+      {department_filter}
+    """), {"department_id":department_id}).mappings().one()
     return {"total":int(cards["total"] or 0),"open":int(cards["open_count"] or 0),
             "overdue":int(cards["overdue"] or 0),"escalated":int(cards["escalated"] or 0),
             "resolved":int(cards["resolved"] or 0),"reopen_rate":float(cards["reopen_rate"]) if cards["reopen_rate"] is not None else None}
 
 
-def grouped_counts(connection: Connection, group: str) -> list[dict]:
+def grouped_counts(connection: Connection, group: str, department_id: int | None = None) -> list[dict]:
     if group == "status":
         query="""SELECT st.code AS key_name,st.label AS label,COUNT(*) AS count
                  FROM complaints c JOIN complaint_statuses st ON st.id=c.status_id
+                 WHERE (:department_id IS NULL OR c.assigned_department_id=:department_id)
                  GROUP BY st.id,st.code,st.label ORDER BY st.sort_order"""
     elif group == "category":
         query="""SELECT CAST(cat.id AS CHAR) AS key_name,cat.name AS label,COUNT(c.id) AS count
                  FROM complaint_categories cat LEFT JOIN complaints c ON c.category_id=cat.id
+                   AND (:department_id IS NULL OR c.assigned_department_id=:department_id)
                  GROUP BY cat.id,cat.name ORDER BY cat.name"""
     elif group == "severity":
         query="""SELECT COALESCE(c.ai_severity,'unclassified') AS key_name,
                  COALESCE(c.ai_severity,'Unclassified') AS label,COUNT(*) AS count
-                 FROM complaints c GROUP BY c.ai_severity
+                 FROM complaints c WHERE (:department_id IS NULL OR c.assigned_department_id=:department_id)
+                 GROUP BY c.ai_severity
                  ORDER BY CASE c.ai_severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2
                    WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END"""
     else:
         raise ValueError("Unsupported analytics grouping")
-    rows=connection.execute(text(query)).mappings().all()
+    rows=connection.execute(text(query),{"department_id":department_id}).mappings().all()
     return [{"key":row["key_name"],"label":row["label"],"count":int(row["count"])} for row in rows]

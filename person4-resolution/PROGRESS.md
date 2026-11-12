@@ -21,12 +21,15 @@
 - Added authenticated notification list, unread-count, mark-read, and mark-all-read routes with ownership scoping and `{detail, code}` error bodies.
 - Added MySQL integration tests for recipient selection, persistence, pagination/filtering, and cross-user isolation; tests skip promptly if MySQL is unreachable.
 - Fixed the default database URL reference so the FastAPI application imports correctly.
+- Implemented official response request/response schemas, repository writes, authorization service, and POST `/api/complaints/{complaint_id}/responses` route.
+- Response insert, audit log insert, and public citizen/supporter notifications execute within one transaction. Private responses do not notify.
+- Added MySQL integration tests for public/private notification behavior, audit persistence, and department authorization.
 
 ## Next
 
 - Replace the provisional auth seam when Person 2 delivers the real auth contract.
 - Run `python -m pytest -q` once pytest can be installed in `person4-resolution/.venv`.
-- Implement verification, routing, SLA/escalation, and response workflows in a later task step after teammate contracts arrive.
+- Implement verification, routing, SLA/escalation, and remaining workflow routes in later steps after teammate contracts arrive.
 - Run the MySQL fixture on an available MySQL 8 instance and verify migration application.
 - Commit the notification implementation after final path/status review.
 

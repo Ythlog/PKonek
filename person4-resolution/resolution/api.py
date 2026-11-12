@@ -3,9 +3,11 @@
 from fastapi import APIRouter, FastAPI
 from .config import get_settings
 from .routers.notifications import router as notifications_router
+from .routers.responses import router as responses_router
 
 router = APIRouter()
 router.include_router(notifications_router, prefix=get_settings().api_prefix)
+router.include_router(responses_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:

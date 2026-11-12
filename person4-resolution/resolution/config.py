@@ -4,10 +4,12 @@ from functools import lru_cache
 import os
 from dataclasses import dataclass
 
+_DEFAULT_DATABASE_URL = "mysql+pymysql://root:root@127.0.0.1:3306/pkonek"
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
-    database_url: str = "mysql+pymysql://root:root@127.0.0.1:3306/pkonek"
+    database_url: str = _DEFAULT_DATABASE_URL
     jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     app_env: str = "dev"
@@ -23,7 +25,7 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     return Settings(
-        database_url=os.getenv("DATABASE_URL", Settings.database_url),
+        database_url=os.getenv("DATABASE_URL", _DEFAULT_DATABASE_URL),
         jwt_secret=os.getenv("JWT_SECRET", ""),
         jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
         app_env=os.getenv("APP_ENV", "dev"),

@@ -1,8 +1,11 @@
 """FastAPI integration points. Scheduler lifecycle is explicit and side-effect free on import."""
 
 from fastapi import APIRouter, FastAPI
+from .config import get_settings
+from .routers.notifications import router as notifications_router
 
 router = APIRouter()
+router.include_router(notifications_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:

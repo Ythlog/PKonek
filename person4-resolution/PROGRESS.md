@@ -17,6 +17,10 @@
 - Recorded that Step 4 should validate the referenced media row belongs to the complaint and has `media_type = 'after'`.
 - Attempted folder-local venv setup. `ensurepip` was blocked copying its bundled wheel into sandbox temp; package installation was blocked by unavailable DNS to PyPI. `python -m pytest -q` was run and failed because pytest is not installed.
 - Checked MySQL reachability: `127.0.0.1:3306` is not reachable, so `pkonek_test` migration verification cannot run here.
+- Implemented notification type constants, transaction-scoped `notify`/recipient helpers, and raw-SQL repositories for list/count/read operations.
+- Added authenticated notification list, unread-count, mark-read, and mark-all-read routes with ownership scoping and `{detail, code}` error bodies.
+- Added MySQL integration tests for recipient selection, persistence, pagination/filtering, and cross-user isolation; tests skip promptly if MySQL is unreachable.
+- Fixed the default database URL reference so the FastAPI application imports correctly.
 
 ## Next
 
@@ -24,14 +28,12 @@
 - Run `python -m pytest -q` once pytest can be installed in `person4-resolution/.venv`.
 - Implement verification, routing, SLA/escalation, and response workflows in a later task step after teammate contracts arrive.
 - Run the MySQL fixture on an available MySQL 8 instance and verify migration application.
-- User to run `git switch -c feature/person4-resolution`; the requested single attempt failed because Git could not create `.git/refs/heads/feature/person4-resolution`. Per instruction, no retry or workaround was attempted.
+- Commit the notification implementation after final path/status review.
 
 ## Assumptions
 
 - The tracked root `db/schema.sql` is the schema snapshot to use; it includes the required tables, roles, and status codes.
 - Authentication claims use `sub` and `role`, as specified; official department is looked up from `official_profiles`.
 - DB datetimes use UTC and `DATETIME(3)`.
-- Git branch setup is blocked by permission creating `.git/refs/heads/feature/person4-resolution`; all changes remain unstaged and no commit was attempted.
-- Pytest is unavailable and could not be installed because ensurepip temp writes are denied and PyPI DNS is unavailable; the real pytest command was executed and failed with `No module named pytest`.
-- The MySQL test service is unavailable at `127.0.0.1:3306`.
+- The configured MySQL server is unreachable from this sandbox at `127.0.0.1:3306`; integration tests should run in the user's environment.
 

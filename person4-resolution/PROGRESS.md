@@ -30,6 +30,9 @@
 - Implemented official claim, administrator department/official assignment, and category-based auto-assignment with lowest-priority selection.
 - Assignment writes, audit records, status history for claims, and ASSIGNED notifications share one transaction; officials are constrained by department or direct assignment.
 - Added MySQL integration coverage for claim/history/audit/notification, admin reassignment, access denial, routing priority, and unroutable complaints.
+- Implemented authenticated official/admin queue with department scoping, status/category/severity/overdue/assigned-to-me filters, pagination, support count, overdue flag, and time-left seconds.
+- Queue uses MySQL `CASE` ordering for explicit critical/high/medium/low/NULL severity rank, after overdue-first ordering.
+- Added MySQL integration coverage for risk order, null severity, derived fields, and filters.
 
 ## Next
 

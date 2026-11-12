@@ -1,5 +1,8 @@
-import { AreaPlaceholder } from "@/components/auth/AreaPlaceholder";
+import type { Metadata } from "next";
+import { StaffHome } from "@/components/dashboard/StaffHome";
 
-export default function AdminHome() {
-  return <AreaPlaceholder area="pasig_admin" title="City administration" />;
+export const metadata: Metadata = { title: "Dashboard" };
+
+export default function AdminDashboardPage() {
+  return <StaffHome role="pasig_admin" />;
 }

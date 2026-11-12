@@ -1,5 +1,8 @@
-import { AreaPlaceholder } from "@/components/auth/AreaPlaceholder";
+import type { Metadata } from "next";
+import { CitizenHome } from "@/components/dashboard/CitizenHome";
 
-export default function CitizenHome() {
-  return <AreaPlaceholder area="citizen" title="Your reports" />;
+export const metadata: Metadata = { title: "Home" };
+
+export default function CitizenHomePage() {
+  return <CitizenHome />;
 }

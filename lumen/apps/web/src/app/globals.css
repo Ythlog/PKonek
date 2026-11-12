@@ -100,6 +100,27 @@
   /* Motion */
   --default-transition-duration: 150ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --animate-fade-in: fade-in 180ms var(--ease-standard);
+  --animate-pop-in: pop-in 200ms var(--ease-standard);
+  --animate-slide-in-right: slide-in-right 200ms var(--ease-standard);
+  --animate-slide-in-left: slide-in-left 200ms var(--ease-standard);
+  --animate-slide-in-up: slide-in-up 200ms var(--ease-standard);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  }
+  @keyframes slide-in-right {
+    from { transform: translateX(100%); }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes slide-in-up {
+    from { transform: translateY(100%); }
+  }
 }
 
 /* The font variable is set on <html> by next/font, so reference it inline. */

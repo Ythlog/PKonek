@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { ComponentGallery } from "./ComponentGallery";
 import { colorGroups, radii, shadows, spacingSteps, statusTokens, typeScale } from "@/lib/design-tokens";
 
 export const metadata: Metadata = { title: "Design system" };
@@ -164,6 +165,10 @@ export default function StyleguidePage() {
               </li>
             ))}
           </ul>
+        </Section>
+
+        <Section id="components" title="Components" description="Shared building blocks in src/components/ui. Every screen for every role is built from these.">
+          <ComponentGallery />
         </Section>
 
         <Section id="logo" title="Logo" description="The logo is cream, so it only sits on brand-700. On light headers, use the badge.">

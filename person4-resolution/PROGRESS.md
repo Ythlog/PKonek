@@ -51,6 +51,9 @@
 - Added scheduler job 2 for SLA warnings at the configured elapsed ratio, using an injected clock, row locking with `SKIP LOCKED`, and cycle-keyed event idempotency.
 - Warning job skips `resolved_pending_verification` complaints and sends `SLA_WARNING` to the assigned official and active officials in the assigned department.
 - Added integration coverage for threshold timing, once-per-cycle notification/event creation, and the paused verification state.
+- Added scheduler job 3 for overdue processing at 100% SLA elapsed: records an overdue event per cycle, optionally reassigns to escalation target level 1, records escalation level 1 with the original department, and sends SLA_OVERDUE/ESCALATED notifications.
+- If no level-1 escalation target exists, job records overdue and does not reassign or emit a level-1 escalation event.
+- Added injected-clock integration tests for cycle idempotency, target/no-target handling, event details, notifications, and verification pause.
 
 ## Next
 

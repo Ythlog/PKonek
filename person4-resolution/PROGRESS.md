@@ -36,6 +36,9 @@
 - Implemented status-change endpoint with row locking, old-status transition validation through the domain state machine, actor authorization, and one-transaction status history/audit/notification writes.
 - Completion-for-verification checks for an existing complaint_media row with media_type `after`; it sets resolved_at and sends the citizen VERIFICATION_REQUESTED. No media rows are inserted.
 - Added MySQL integration tests for valid/missing/wrong after-photo, invalid transition, ownership denial, and atomic side effects.
+- Implemented only confirmed citizen verification: original-citizen ownership and pending-verification status checks, confirmation row, resolved status/verified timestamp, history/audit, completed SLA event, and COMPLAINT_RESOLVED notifications within one transaction.
+- Rejected verification currently returns HTTP 400 for the planned follow-up step.
+- Added MySQL integration tests for confirmed side effects, actor/state restrictions, and rejected-verdict behavior.
 
 ## Next
 

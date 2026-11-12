@@ -8,6 +8,7 @@ from .routers.timeline import router as timeline_router
 from .routers.assignment import router as assignment_router
 from .routers.queue import router as queue_router
 from .routers.status_change import router as status_change_router
+from .routers.verification import router as verification_router
 
 router = APIRouter()
 router.include_router(notifications_router, prefix=get_settings().api_prefix)
@@ -16,6 +17,7 @@ router.include_router(timeline_router, prefix=get_settings().api_prefix)
 router.include_router(assignment_router, prefix=get_settings().api_prefix)
 router.include_router(queue_router, prefix=get_settings().api_prefix)
 router.include_router(status_change_router, prefix=get_settings().api_prefix)
+router.include_router(verification_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:

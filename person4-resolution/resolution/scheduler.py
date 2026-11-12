@@ -144,6 +144,47 @@ def process_overdue_and_escalate(*, connection_engine=engine, clock: Callable[[]
     return processed
 
 
+def escalate_level_two(*, connection_engine=engine, clock: Callable[[], datetime] | None = None,
+                       batch_size: int = 100) -> int:
+    """At due + configured grace, record level 2 once per SLA cycle and notify admins."""
+    now = (clock or (lambda: datetime.now(timezone.utc)))()
+    processed = 0
+    with connection_engine.begin() as connection:
+        rows = connection.execute(text("""
+          SELECT c.id,c.due_at,c.submitted_at,cat.default_sla_hours
+          FROM complaints c JOIN complaint_categories cat ON cat.id=c.category_id
+          JOIN complaint_statuses st ON st.id=c.status_id
+          WHERE c.due_at IS NOT NULL AND st.is_terminal=FALSE
+            AND st.code <> 'resolved_pending_verification'
+            AND :now >= TIMESTAMPADD(SECOND,
+              CAST(cat.default_sla_hours * 3600 * :grace_ratio AS SIGNED),c.due_at)
+          ORDER BY c.id LIMIT :batch_size FOR UPDATE SKIP LOCKED
+        """), {"now":now,"grace_ratio":get_settings().escalation_l2_grace_ratio,
+              "batch_size":batch_size}).mappings().all()
+        for row in rows:
+            cycle_key=row["submitted_at"].strftime("%Y-%m-%d %H:%M:%S.%f")
+            current_level=connection.execute(text("""
+              SELECT COALESCE(MAX(escalation_level),0) FROM sla_events
+              WHERE complaint_id=:id AND event_type='escalated'
+                AND JSON_UNQUOTE(JSON_EXTRACT(details,'$.cycle_start'))=:cycle_start
+            """),{"id":row["id"],"cycle_start":cycle_key}).scalar_one()
+            if int(current_level)>=2:
+                continue
+            admins=connection.execute(text("""
+              SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id
+              WHERE r.name='pasig_admin' AND u.account_status='active'
+            """)).scalars().all()
+            connection.execute(text("""
+              INSERT INTO sla_events(complaint_id,event_type,event_at,escalation_level,details)
+              VALUES(:id,'escalated',:now,2,JSON_OBJECT('cycle_start',DATE_FORMAT(:cycle_start,'%Y-%m-%d %H:%i:%s.%f'),
+                'due_at',DATE_FORMAT(:due_at,'%Y-%m-%d %H:%i:%s.%f'),'escalation_level',2))
+            """),{"id":row["id"],"now":now,"cycle_start":row["submitted_at"],"due_at":row["due_at"]})
+            for admin_id in admins:
+                notify(connection,int(admin_id),int(row["id"]),ESCALATED,"Level 2 escalation","Complaint exceeded its SLA by the level-2 grace period.")
+            processed+=1
+    return processed
+
+
 def start_scheduler() -> None:
     """Start the interval job once; importing this module never starts it."""
     global _scheduler
@@ -156,6 +197,8 @@ def start_scheduler() -> None:
                       id="person4_sla_warning", replace_existing=True, max_instances=1, coalesce=True)
     scheduler.add_job(process_overdue_and_escalate, "interval", minutes=get_settings().sla_job_interval_minutes,
                       id="person4_sla_escalation", replace_existing=True, max_instances=1, coalesce=True)
+    scheduler.add_job(escalate_level_two, "interval", minutes=get_settings().sla_job_interval_minutes,
+                      id="person4_sla_escalation_l2", replace_existing=True, max_instances=1, coalesce=True)
     scheduler.start()
     _scheduler = scheduler
 

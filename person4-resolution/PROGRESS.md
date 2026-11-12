@@ -54,6 +54,8 @@
 - Added scheduler job 3 for overdue processing at 100% SLA elapsed: records an overdue event per cycle, optionally reassigns to escalation target level 1, records escalation level 1 with the original department, and sends SLA_OVERDUE/ESCALATED notifications.
 - If no level-1 escalation target exists, job records overdue and does not reassign or emit a level-1 escalation event.
 - Added injected-clock integration tests for cycle idempotency, target/no-target handling, event details, notifications, and verification pause.
+- Added scheduler job 4 at `due_at + category SLA × ESCALATION_L2_GRACE_RATIO`; it reads the current cycle's maximum escalation level, writes one level-2 escalated event, and notifies active pasig_admin users.
+- Added injected-clock integration coverage for grace threshold, level progression, idempotency, admin notifications, and paused verification state.
 
 ## Next
 

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from resolution.scheduler import backfill_due_dates
 from resolution.scheduler import emit_sla_warnings
 from resolution.scheduler import process_overdue_and_escalate
+from resolution.scheduler import escalate_level_two
 
 
 @pytest.fixture
@@ -133,3 +134,21 @@ def test_overdue_without_level_one_target_records_only_overdue(mysql_test_engine
             conn.execute(text("DELETE FROM users WHERE id=927"))
             conn.execute(text("DELETE FROM complaint_categories WHERE id=927"))
             conn.execute(text("DELETE FROM departments WHERE id=927"))
+
+
+def test_level_two_at_grace_once_and_current_cycle_level(overdue_seed,mysql_test_engine):
+    now=overdue_seed
+    # overdue_seed SLA is 10h and due was just before now; L2 is due + 5h.
+    assert escalate_level_two(connection_engine=mysql_test_engine,clock=lambda:now+timedelta(hours=4,minutes=59))==0
+    # Ensure L1 record in this same cycle so the highest level advances from 1 to 2.
+    with mysql_test_engine.begin() as conn:
+        conn.execute(text("INSERT INTO sla_events(complaint_id,event_type,event_at,escalation_level,details) VALUES "
+                          "(924,'escalated',:now,1,JSON_OBJECT('cycle_start',DATE_FORMAT(:cycle,'%Y-%m-%d %H:%i:%s.%f')))"),
+                     {"now":now,"cycle":now-timedelta(hours=10)})
+    assert escalate_level_two(connection_engine=mysql_test_engine,clock=lambda:now+timedelta(hours=5))==1
+    assert escalate_level_two(connection_engine=mysql_test_engine,clock=lambda:now+timedelta(hours=6))==0
+    with mysql_test_engine.connect() as conn:
+        assert conn.execute(text("SELECT MAX(escalation_level) FROM sla_events WHERE complaint_id=924 AND event_type='escalated'")).scalar_one()==2
+        assert conn.execute(text("SELECT COUNT(*) FROM sla_events WHERE complaint_id=924 AND event_type='escalated' AND escalation_level=2")).scalar_one()==1
+        assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=924 AND notification_type='ESCALATED' AND user_id IN (SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id WHERE r.name='pasig_admin')")).scalar_one()>=1
+        assert conn.execute(text("SELECT COUNT(*) FROM sla_events WHERE complaint_id=926 AND event_type='escalated' AND escalation_level=2")).scalar_one()==0

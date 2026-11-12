@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKonek - Citizen Complaint Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <!-- Header/Navigation - Citizen Focused -->
+    <header class="site-header">
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <h1 class="site-title">PKonek Citizen</h1>
+                <span class="site-subtitle">Your Voice in Pasig City</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#dashboard" class="nav-link">Dashboard</a></li>
+                <li class="nav-item"><a href="#report" class="nav-link">Report Issue</a></li>
+                <li class="nav-item"><a href="#my-complaints" class="nav-link">My Complaints</a></li>
+                <li class="nav-item"><a href="#map" class="nav-link">Community Map</a></li>
+                <li class="nav-item"><a href="#profile" class="nav-link">My Profile</a></li>
+            </ul>
+            <div class="nav-user">
+                <span class="user-welcome">Welcome, Citizen!</span>
+                <button class="btn btn-small" onclick="handleLogin()">Login</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area - Citizen Dashboard -->
+    <main class="main-content">
+        <!-- Citizen Dashboard -->
+        <section id="dashboard" class="dashboard-section">
+            <div class="dashboard-header">
+                <h2 class="dashboard-title">Citizen Dashboard</h2>
+                <p class="dashboard-subtitle">Track and manage your civic complaints</p>
+            </div>
+            
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Active Complaints</div>
+                    <div class="stat-trend">+0 this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Resolved Issues</div>
+                    <div class="stat-trend">+0 this month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Community Support</div>
+                    <div class="stat-trend">"Me Too" votes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0d 0h</div>
+                    <div class="stat-label">Avg. Response Time</div>
+                    <div class="stat-trend">Within SLA target</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Action Cards -->
+        <section class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-grid">
+                <div class="action-card" onclick="navigateToSection('report')">
+                    <div class="action-icon">📝</div>
+                    <h3 class="action-title">Report New Issue</h3>
+                    <p class="action-description">Submit a new complaint with photos and location</p>
+                    <button class="btn-action">Start Report</button>
+                </div>
+                <div class="action-card" onclick="navigateToSection('my-complaints')">
+                    <div class="action-icon">📋</div>
+                    <h3 class="action-title">View My Complaints</h3>
+                    <p class="action-description">Check status of your submitted complaints</p>
+                    <button class="btn-action">View All</button>
+                </div>
+                <div class="action-card" onclick="navigateToSection('map')">
+                    <div class="action-icon">📍</div>
+                    <h3 class="action-title">Community Issues Map</h3>
+                    <p class="action-description">See what others are reporting in your area</p>
+                    <button class="btn-action">Open Map</button>
+                </div>
+                <div class="action-card" onclick="showNotification('Chatbot feature coming soon!')">
+                    <div class="action-icon">🤖</div>
+                    <h3 class="action-title">AI Complaint Assistant</h3>
+                    <p class="action-description">Get help writing your complaint description</p>
+                    <button class="btn-action">Talk to Lumen</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Report Issue Section -->
+        <section id="report" class="section-placeholder">
+            <h2 class="section-title">Report a Civic Issue</h2>
+            <div class="placeholder-content">
+                <p>Report form includes:</p>
+                <ul class="feature-list">
+                    <li>Written description with AI assistance</li>
+                    <li>Photo upload for evidence</li>
+                    <li>Interactive map for precise location</li>
+                    <li>Category selection</li>
+                    <li>Severity rating</li>
+                </ul>
+                <button class="btn btn-primary" onclick="showNotification('Report form will open here')">Start New Report</button>
+            </div>
+        </section>
+
+        <!-- My Complaints Section -->
+        <section id="my-complaints" class="section-placeholder">
+            <h2 class="section-title">My Complaint History</h2>
+            <div class="placeholder-content">
+                <p>Track your complaint status:</p>
+                <ul class="feature-list">
+                    <li>Submitted complaints with photos</li>
+                    <li>Current status (Pending, In Progress, Resolved)</li>
+                    <li>Official responses and updates</li>
+                    <li>SLA timer and escalation status</li>
+                    <li>Option to verify completion or reopen</li>
+                </ul>
+                <button class="btn btn-secondary" onclick="showNotification('Loading your complaints...')">Load My Complaints</button>
+            </div>
+        </section>
+
+        <!-- Community Map Section -->
+        <section id="map" class="section-placeholder">
+            <h2 class="section-title">Community Issues Map</h2>
+            <div class="placeholder-content">
+                <p>Interactive map features:</p>
+                <ul class="feature-list">
+                    <li>Live map of reported issues in Pasig</li>
+                    <li>Filter by category and status</li>
+                    <li>Hotspot detection for common issues</li>
+                    <li>"Me Too" support for existing reports</li>
+                    <li>Duplicate report prevention</li>
+                </ul>
+                <button class="btn btn-secondary" onclick="showNotification('Opening interactive map...')">Open Community Map</button>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profile" class="section-placeholder">
+            <h2 class="section-title">My Citizen Profile</h2>
+            <div class="placeholder-content">
+                <p>Profile management:</p>
+                <ul class="feature-list">
+                    <li>Personal information and contact details</li>
+                    <li>Notification preferences</li>
+                    <li>Complaint history and statistics</li>
+                    <li>Account security settings</li>
+                    <li>Verification status</li>
+                </ul>
+                <div class="profile-actions">
+                    <button class="btn btn-secondary" onclick="showNotification('Opening profile editor...')">Edit Profile</button>
+                    <button class="btn" onclick="showNotification('Login/Register form will open')">Login / Register</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer - Citizen Focused -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3 class="footer-title">PKonek Citizen Platform</h3>
+                <p class="footer-tagline">Empowering Pasig City Residents</p>
+                <p class="footer-mission">Report issues, track resolutions, improve your community</p>
+            </div>
+            <div class="footer-links">
+                <h4 class="footer-heading">Citizen Resources</h4>
+                <ul class="footer-menu">
+                    <li><a href="#report" onclick="navigateToSection('report')">How to Report</a></li>
+                    <li><a href="#my-complaints" onclick="navigateToSection('my-complaints')">Track Your Reports</a></li>
+                    <li><a href="#map" onclick="navigateToSection('map')">Community Map</a></li>
+                    <li><a href="#" onclick="showNotification('FAQ coming soon')">FAQ & Help</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4 class="footer-heading">Support</h4>
+                <p>For citizen support: <a href="mailto:citizen@pkonek.ph">citizen@pkonek.ph</a></p>
+                <p>Pasig City Hotline: 123-4567</p>
+            </div>
+            <div class="footer-info">
+                <p>&copy; 2024 PKonek Citizen Platform. Pasig City Government.</p>
+                <p class="footer-disclaimer">This platform is for citizen engagement and civic issue reporting.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

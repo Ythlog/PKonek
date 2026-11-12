@@ -1,28 +1,39 @@
-import fs from "node:fs";
-import path from "node:path";
-import Script from "next/script";
+import Link from "next/link";
+import { ArrowRight, Palette } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
-const projectRoot = path.resolve(process.cwd(), "..", "..", "..");
-const citizenHtml = fs.readFileSync(
-  path.join(projectRoot, "frontend", "index.html"),
-  "utf8",
-);
-
-// Keep the existing citizen prototype as the source of the page markup while
-// Next.js serves it at the app's root route.
-const citizenMarkup = citizenHtml
-  .replace(/<!--[\s\S]*?-->/g, "")
-  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-  .replace(/<\/body\s*>/i, "")
-  .replace(/<!doctype[^>]*>/i, "")
-  .replace(/<html\b[^>]*>/i, "")
-  .replace(/<head\b[^>]*>[\s\S]*?<\/head>/i, "");
-
+// Temporary home page. Task 5 replaces it with the public landing page.
 export default function Home() {
   return (
-    <>
-      <div dangerouslySetInnerHTML={{ __html: citizenMarkup }} />
-      <Script src="/citizen/app.js" strategy="afterInteractive" />
-    </>
+    <main className="flex min-h-dvh flex-col">
+      <section className="bg-brand-700 px-6 py-16 sm:py-24">
+        <div className="mx-auto flex max-w-content flex-col gap-8">
+          <Logo size="lg" />
+          <div className="max-w-2xl">
+            <h1 className="text-3xl text-white sm:text-4xl">Report it. Track it. See it fixed.</h1>
+            <p className="mt-4 text-lg text-brand-50">
+              PKonek connects Pasig City residents with their barangay and city officials, from the
+              first report to a verified fix.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section className="mx-auto w-full max-w-content flex-1 px-6 py-12">
+        <div className="rounded-card border border-border bg-surface p-6 shadow-card">
+          <h2 className="text-xl">The new PKonek interface is being built</h2>
+          <p className="mt-2 text-muted">
+            The design system is ready. Citizen, official and administrator screens come next.
+          </p>
+          <Link
+            href="/styleguide"
+            className="mt-6 inline-flex min-h-touch items-center gap-2 rounded-control bg-brand-600 px-5 font-semibold text-white transition-colors hover:bg-brand-700"
+          >
+            <Palette aria-hidden size={18} strokeWidth={1.75} />
+            View the design system
+            <ArrowRight aria-hidden size={18} strokeWidth={1.75} />
+          </Link>
+        </div>
+      </section>
+    </main>
   );
 }

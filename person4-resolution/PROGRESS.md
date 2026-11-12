@@ -58,6 +58,8 @@
 - Added injected-clock integration coverage for grace threshold, level progression, idempotency, admin notifications, and paused verification state.
 - Added a Pasig-admin-only overview endpoint with total/open/overdue/escalated/resolved cards, reopen rate based on domain metric definition, and grouped counts by status/category/severity.
 - Added seeded MySQL integration test asserting varied card totals and each breakdown.
+- Added Pasig-admin performance metrics for verification rates per official/department (confirmed divided by confirmed plus rejected, excluding auto_timeout) and average first response, average first Done resolution, and SLA compliance.
+- Added seeded integration tests proving citizen rejection lowers the verification rate, auto_timeout is excluded, and time/SLA statistics follow domain metric definitions.
 
 ## Next
 

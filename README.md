@@ -1,2 +1,2 @@
-# Mom-donny
+# PKonek
 Overclocked Hackathon pitch project

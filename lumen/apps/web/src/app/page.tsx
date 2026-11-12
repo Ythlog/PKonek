@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Palette } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { DemoModePill } from "@/components/DemoModePill";
+import { buttonClasses } from "@/components/ui/Button";
 
 // Temporary home page. Task 5 replaces it with the public landing page.
 export default function Home() {
@@ -26,16 +27,24 @@ export default function Home() {
         <div className="rounded-card border border-border bg-surface p-6 shadow-card">
           <h2 className="text-xl">The new PKonek interface is being built</h2>
           <p className="mt-2 text-muted">
-            The design system is ready. Citizen, official and administrator screens come next.
+            Sign-in is ready for residents, barangay officials and Pasig administrators.
           </p>
-          <Link
-            href="/styleguide"
-            className="mt-6 inline-flex min-h-touch items-center gap-2 rounded-control bg-brand-600 px-5 font-semibold text-white transition-colors hover:bg-brand-700"
-          >
-            <Palette aria-hidden size={18} strokeWidth={1.75} />
-            View the design system
-            <ArrowRight aria-hidden size={18} strokeWidth={1.75} />
-          </Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/login" className={buttonClasses()}>
+              Resident sign in
+              <ArrowRight aria-hidden size={18} strokeWidth={1.75} />
+            </Link>
+            <Link href="/register" className={buttonClasses({ variant: "secondary" })}>
+              Create an account
+            </Link>
+            <Link href="/staff/login" className={buttonClasses({ variant: "secondary" })}>
+              Staff sign in
+            </Link>
+            <Link href="/styleguide" className={buttonClasses({ variant: "ghost" })}>
+              <Palette aria-hidden size={18} strokeWidth={1.75} />
+              Design system
+            </Link>
+          </div>
         </div>
       </section>
     </main>

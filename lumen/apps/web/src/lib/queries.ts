@@ -9,6 +9,7 @@ export const queryKeys = {
   categories: ["categories"] as const,
   complaints: (filters: ComplaintFilters = {}) => ["complaints", filters] as const,
   complaint: (id: number) => ["complaint", id] as const,
+  timeline: (id: number) => ["timeline", id] as const,
 };
 
 export function useCategories() {
@@ -23,6 +24,22 @@ export function useCategories() {
 export function useCategoryMap(): Map<number, Category> {
   const { data } = useCategories();
   return new Map((data ?? []).map((c) => [c.id, c]));
+}
+
+export function useComplaint(id: number | null) {
+  return useQuery({
+    queryKey: queryKeys.complaint(id ?? 0),
+    queryFn: () => complaintService.get(id!),
+    enabled: id !== null,
+  });
+}
+
+export function useTimeline(id: number | null) {
+  return useQuery({
+    queryKey: queryKeys.timeline(id ?? 0),
+    queryFn: () => complaintService.timeline(id!),
+    enabled: id !== null,
+  });
 }
 
 export function useComplaints(filters: ComplaintFilters = {}, options: { enabled?: boolean } = {}) {

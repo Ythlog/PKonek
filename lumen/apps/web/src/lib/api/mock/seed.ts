@@ -1,5 +1,5 @@
 import { PASIG_BARANGAYS } from "@/lib/pasig";
-import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, Role, User } from "../types";
+import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, ComplaintUpdate, Role, User } from "../types";
 
 /** Demo accounts. Shown on the login screens while mock mode is on. */
 export const DEMO_PASSWORD = "Demo1234!";
@@ -22,12 +22,16 @@ export type MockSupport = {
   created_at: string;
 };
 
+export type MockMedia = { id: number; complaint_id: number; uploaded_by: number; media_type: string; url: string; created_at: string };
+
 export type MockDb = {
-  version: 1;
+  version: 2;
   users: MockUser[];
   categories: Category[];
   complaints: ComplaintStaff[];
   supports: MockSupport[];
+  updates: ComplaintUpdate[];
+  media: MockMedia[];
   activity: ActivityLog[];
   audit: AuditLog[];
 };
@@ -133,6 +137,40 @@ function iso(ms: number) {
   return new Date(ms).toISOString().slice(0, 19);
 }
 
+const OFFICIAL_UPDATES: Record<string, string[]> = {
+  in_progress: [
+    "We've seen your report and logged it with the engineering office.",
+    "A crew is scheduled to work on this within the week.",
+  ],
+  resolved: ["A crew has been sent to the site.", "The work is done. Please check and confirm it's fixed."],
+  rejected: ["After an inspection this was referred to the right agency, so we're closing it here."],
+};
+
+/** Officials' public updates on the seeded complaints that have moved past "open". */
+function seedUpdates(complaints: ComplaintStaff[], now: number): ComplaintUpdate[] {
+  const updates: ComplaintUpdate[] = [];
+  for (const c of complaints) {
+    const texts = OFFICIAL_UPDATES[c.status];
+    if (!texts) continue;
+    const start = Date.parse(`${c.created_at}Z`);
+    const end = Date.parse(`${c.updated_at}Z`);
+    const kapitolyo = c.barangay === "Kapitolyo";
+    texts.forEach((body, i) => {
+      const at = Math.min(start + ((end - start) * (i + 1)) / (texts.length + 1), now);
+      updates.push({
+        id: updates.length + 1,
+        complaint_id: c.id,
+        author_id: kapitolyo ? 2 : 1,
+        author_name: kapitolyo ? "Ramon Aquino" : "Patricia Lopez",
+        body,
+        is_public: true,
+        created_at: iso(at),
+      });
+    });
+  }
+  return updates;
+}
+
 export function createSeed(now = Date.now()): MockDb {
   const hour = 3_600_000;
   const year = new Date(now).getFullYear();
@@ -190,5 +228,5 @@ export function createSeed(now = Date.now()): MockDb {
     .filter((u) => u.last_login_at)
     .map((u, i) => ({ id: i + 1, user_id: u.id, email: u.email, action: "login_success", ip_address: "127.0.0.1", user_agent: "Demo browser", details: null, created_at: u.last_login_at! }));
 
-  return { version: 1, users, categories, complaints, supports: [], activity, audit };
+  return { version: 2, users, categories, complaints, supports: [], updates: seedUpdates(complaints, now), media: [], activity, audit };
 }

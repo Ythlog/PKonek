@@ -9,6 +9,8 @@ import type {
   ComplaintCreate,
   ComplaintFilters,
   ComplaintStaff,
+  ComplaintUpdate,
+  ComplaintUpdateCreate,
   DuplicateCheckRequest,
   DuplicateCheckResponse,
   LogParams,
@@ -17,6 +19,7 @@ import type {
   Page,
   StatusUpdate,
   SupportCreate,
+  TimelineItem,
   TokenResponse,
   User,
   UserCreate,
@@ -48,6 +51,10 @@ export interface PKonekApi {
     get(id: number): Promise<Complaint | ComplaintStaff>;
     support(id: number, input: SupportCreate): Promise<Complaint | ComplaintStaff>;
     updateStatus(id: number, input: StatusUpdate): Promise<ComplaintStaff>;
+    /** Newest first. Staff see internal notes; everyone else only public items. */
+    timeline(id: number): Promise<TimelineItem[]>;
+    /** Official update on a complaint. Staff only. */
+    postUpdate(id: number, input: ComplaintUpdateCreate): Promise<ComplaintUpdate>;
   };
   users: {
     list(params?: UserListParams): Promise<Page<User>>;

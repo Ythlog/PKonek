@@ -218,6 +218,37 @@ export type ComplaintFilters = Partial<{
   page_size: number;
 }>;
 
+// ---------- Official updates and timeline ----------
+/**
+ * Shaped like person4-resolution: POST /api/complaints/{id}/responses {body, is_public}
+ * and GET /api/complaints/{id}/timeline [{type, timestamp, display_text}].
+ */
+export type ComplaintUpdateCreate = { body: string; is_public: boolean };
+
+export type ComplaintUpdate = {
+  id: number;
+  complaint_id: number;
+  author_id: number;
+  author_name: string;
+  body: string;
+  is_public: boolean;
+  created_at: string;
+};
+
+export type TimelineItemType = "created" | "status_change" | "support" | "response" | "media" | "resolved";
+
+export type TimelineItem = {
+  type: TimelineItemType;
+  timestamp: string;
+  display_text: string;
+  /** Extra detail: the official's note, the update text, or a photo URL. */
+  detail?: string | null;
+  status?: ComplaintStatus;
+  actor_name?: string | null;
+  is_public?: boolean;
+  media_url?: string | null;
+};
+
 // ---------- Media (media_backend) ----------
 /** Citizens upload "initial" evidence to their own complaint; staff upload "progress" or "other". */
 export type MediaType = "initial" | "progress" | "other";

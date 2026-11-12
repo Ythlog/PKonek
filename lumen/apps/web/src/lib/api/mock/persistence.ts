@@ -5,7 +5,7 @@ export interface MockPersistence {
   save(db: MockDb): void;
 }
 
-export const MOCK_STORAGE_KEY = "pkonek.mock.v1";
+export const MOCK_STORAGE_KEY = "pkonek.mock.v2";
 
 /** Keeps demo changes (new reports, status changes) across reloads in this browser. */
 export function localStoragePersistence(key = MOCK_STORAGE_KEY): MockPersistence {
@@ -14,7 +14,7 @@ export function localStoragePersistence(key = MOCK_STORAGE_KEY): MockPersistence
       try {
         const raw = typeof window === "undefined" ? null : window.localStorage.getItem(key);
         const db = raw ? (JSON.parse(raw) as MockDb) : null;
-        return db?.version === 1 ? db : null;
+        return db?.version === 2 ? db : null;
       } catch {
         return null;
       }

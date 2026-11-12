@@ -73,7 +73,9 @@ function fieldErrorsFrom(detail: unknown): Record<string, string> {
   if (!Array.isArray(detail)) return {};
   const errors: Record<string, string> = {};
   for (const item of detail as PydanticError[]) {
-    const loc = (item.loc ?? []).filter((part) => part !== "body" && part !== "query");
+    // FastAPI prefixes the location with where it came from: ["body", "title"].
+    const raw = item.loc ?? [];
+    const loc = ["body", "query", "path"].includes(String(raw[0])) ? raw.slice(1) : raw;
     const field = loc.length ? String(loc[loc.length - 1]) : "_";
     if (!errors[field] && item.msg) errors[field] = item.msg.replace(/^Value error, /, "");
   }

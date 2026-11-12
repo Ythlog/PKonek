@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/shell/ComingSoon";
+import { Suspense } from "react";
+import { ComplaintsWorkspace } from "@/components/staff/ComplaintsWorkspace";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export const metadata: Metadata = { title: "Complaints" };
 
 export default function OfficialComplaintsPage() {
-  return <ComingSoon title="Complaints" description="Filter, review and update the complaints in your barangay." />;
+  return (
+    <Suspense fallback={<Skeleton className="h-96 w-full rounded-card" />}>
+      <ComplaintsWorkspace role="official" />
+    </Suspense>
+  );
 }

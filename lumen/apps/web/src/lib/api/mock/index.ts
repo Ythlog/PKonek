@@ -9,7 +9,9 @@ import {
   type ComplaintFilters,
   type ComplaintStaff,
   type ComplaintStatus,
+  type ComplaintUpdate,
   type Page,
+  type TimelineItem,
   type Role,
   type User,
 } from "../types";
@@ -455,6 +457,48 @@ export function createMockApi({
           commit();
           return out(complaint, viewer);
         }),
+      timeline: (id) =>
+        run(() => {
+          const viewer = optionalUser();
+          const staff = isStaff(viewer);
+          const d = load();
+          const complaint = getComplaintRow(id);
+          const nameOf = (userId: number | null) => d.users.find((u) => u.id === userId)?.full_name ?? null;
+          const items: TimelineItem[] = [
+            { type: "created", timestamp: complaint.created_at, display_text: "Report filed", status: "open", actor_name: staff ? complaint.reporter_name : null },
+          ];
+          for (const m of d.media.filter((m) => m.complaint_id === id)) {
+            const byStaff = m.media_type !== "initial";
+            items.push({ type: "media", timestamp: m.created_at, display_text: byStaff ? "Progress photo from the barangay" : "Photo added by the resident", media_url: m.url, actor_name: nameOf(m.uploaded_by) });
+          }
+          for (const s of d.supports.filter((s) => s.complaint_id === id)) {
+            items.push({ type: "support", timestamp: s.created_at, display_text: "A neighbor said Me Too", detail: s.note });
+          }
+          for (const a of d.audit.filter((a) => a.entity_type === "complaint" && a.entity_id === id && a.action === "status_change")) {
+            const to = (a.after_data?.status ?? "open") as ComplaintStatus;
+            const note = (a.after_data?.note as string | null | undefined) ?? null;
+            items.push({ type: to === "resolved" ? "resolved" : "status_change", timestamp: a.created_at, display_text: "Status changed", status: to, detail: note, actor_name: nameOf(a.actor_user_id) });
+          }
+          for (const u of d.updates.filter((u) => u.complaint_id === id && (u.is_public || staff))) {
+            items.push({ type: "response", timestamp: u.created_at, display_text: u.is_public ? "Update from the barangay" : "Internal note", detail: u.body, actor_name: u.author_name, is_public: u.is_public });
+          }
+          // Newest first; stable for equal timestamps.
+          return items.map((item, i) => ({ item, i })).sort((a, b) => b.item.timestamp.localeCompare(a.item.timestamp) || b.i - a.i).map(({ item }) => item);
+        }),
+      postUpdate: (id, input) =>
+        run(() => {
+          const actor = requireRole("official", "pasig_admin");
+          const body = (input.body ?? "").trim();
+          if (!body) invalid({ body: "String should have at least 1 character" });
+          if (body.length > 2000) invalid({ body: "String should have at most 2000 characters" });
+          getComplaintRow(id);
+          const d = load();
+          const update: ComplaintUpdate = { id: nextId(d.updates), complaint_id: id, author_id: actor.id, author_name: actor.full_name, body, is_public: input.is_public, created_at: stamp() };
+          d.updates.push(update);
+          logAudit({ actor_user_id: actor.id, entity_type: "complaint_response", entity_id: update.id, action: "response_created", before_data: null, after_data: { complaint_id: id, body, is_public: input.is_public } });
+          commit();
+          return update;
+        }),
       updateStatus: (id, input) =>
         run(() => {
           const actor = requireRole("official", "pasig_admin");
@@ -590,11 +634,12 @@ export function createMockApi({
           if (file.size === 0) fail(400, "The uploaded file is empty");
           if (file.size > 10 * 1024 * 1024) fail(413, "Maximum image size is 10 MB");
           if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) fail(415, "Only JPEG, PNG, and WebP images are accepted");
-          if (mediaType === "initial" && !complaint.photo_url) {
-            complaint.photo_url = url;
-            commit();
-          }
-          return { id: complaintId * 100 + 1, complaintId, mediaType, url, mimeType: file.type, fileSizeBytes: file.size, uploadedAt: stamp() };
+          const d = load();
+          const id = nextId(d.media);
+          d.media.push({ id, complaint_id: complaintId, uploaded_by: actor.id, media_type: mediaType, url, created_at: stamp() });
+          if (mediaType === "initial" && !complaint.photo_url) complaint.photo_url = url;
+          commit();
+          return { id, complaintId, mediaType, url, mimeType: file.type, fileSizeBytes: file.size, uploadedAt: stamp() };
         });
       },
     },

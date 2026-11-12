@@ -223,6 +223,49 @@ describe("complaints", () => {
   });
 });
 
+describe("official updates and timeline", () => {
+  it("seeds public updates on complaints that moved past open", () => {
+    const seed = createSeed(NOW);
+    const progressed = seed.complaints.filter((c) => c.status !== "open").map((c) => c.id);
+    expect(new Set(seed.updates.map((u) => u.complaint_id))).toEqual(new Set(progressed));
+  });
+
+  it("lets staff post public updates and internal notes", async () => {
+    expect((await rejection(api.complaints.postUpdate(3, { body: "Hi", is_public: true }))).status).toBe(401);
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.postUpdate(3, { body: "Hi", is_public: true }))).status).toBe(403);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.postUpdate(3, { body: "  ", is_public: true }))).fieldErrors).toHaveProperty("body");
+    const update = await api.complaints.postUpdate(3, { body: "Truck scheduled for Saturday.", is_public: true });
+    expect(update).toMatchObject({ complaint_id: 3, author_name: "Ramon Aquino", is_public: true });
+    await api.complaints.postUpdate(3, { body: "Call the hauler first.", is_public: false });
+  });
+
+  it("shows the timeline newest first and hides internal notes from residents", async () => {
+    await signIn("official@pkonek.demo");
+    await api.complaints.postUpdate(3, { body: "Internal only", is_public: false });
+    clock += 60_000;
+    await api.complaints.updateStatus(3, { status: "in_progress", note: "Crew assigned" });
+    clock += 60_000;
+    await api.complaints.postUpdate(3, { body: "Crew is on the way.", is_public: true });
+
+    const staffView = await api.complaints.timeline(3);
+    expect(staffView.map((i) => i.type)).toEqual(["response", "status_change", "response", "created"]);
+    expect(staffView[1]).toMatchObject({ status: "in_progress", detail: "Crew assigned", actor_name: "Ramon Aquino" });
+
+    token = null;
+    const publicView = await api.complaints.timeline(3);
+    expect(publicView.map((i) => i.detail)).not.toContain("Internal only");
+    expect(publicView.find((i) => i.type === "created")?.actor_name).toBeNull();
+  });
+
+  it("adds staff progress photos to the timeline", async () => {
+    await signIn("official@pkonek.demo");
+    await api.media.upload(3, new File([new Uint8Array(8)], "p.jpg", { type: "image/jpeg" }), "progress");
+    expect((await api.complaints.timeline(3))[0]).toMatchObject({ type: "media", display_text: expect.stringMatching(/progress photo/i) });
+  });
+});
+
 describe("admin routes", () => {
   it("are admin only", async () => {
     await signIn("official@pkonek.demo");

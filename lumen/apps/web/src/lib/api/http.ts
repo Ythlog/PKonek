@@ -1,7 +1,16 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import type { ApiDeps, PKonekApi } from "./contract";
-import { apiErrorFromResponse, networkError } from "./errors";
-import type { ComplaintFilters, MediaType } from "./types";
+import { ApiError, apiErrorFromResponse, networkError } from "./errors";
+import type { Complaint, ComplaintFilters, MediaType, TimelineItem } from "./types";
+
+/** What can be known from the complaint row alone. Newest first. */
+export function timelineFromComplaint(c: Complaint): TimelineItem[] {
+  const items: TimelineItem[] = [{ type: "created", timestamp: c.created_at, display_text: "Report filed", status: "open" }];
+  if (c.status !== "open" && c.updated_at !== c.created_at) {
+    items.push({ type: "status_change", timestamp: c.resolved_at ?? c.updated_at, display_text: "Status changed", status: c.status });
+  }
+  return items.reverse();
+}
 
 /**
  * Axios client for the real backend. Requests go to same-origin /api and /media,
@@ -75,6 +84,13 @@ export function createHttpApi(
       get: async (id) => (await api.get(`/complaints/${id}`)).data,
       support: async (id, input) => (await api.post(`/complaints/${id}/support`, input)).data,
       updateStatus: async (id, input) => (await api.patch(`/complaints/${id}/status`, input)).data,
+      // TODO(backend): person4's GET /api/complaints/{id}/timeline runs on db/schema.sql, which
+      // doesn't match accounts_complaints. Until they share one schema, derive the basics here.
+      timeline: async (id) => timelineFromComplaint((await api.get(`/complaints/${id}`)).data),
+      postUpdate: async () => {
+        // TODO(backend): POST /api/complaints/{id}/responses {body, is_public} once person4 shares the schema.
+        throw new ApiError({ status: 501, kind: "not_implemented", message: "Official updates aren't connected to the server yet." });
+      },
     },
     users: {
       list: async (params) => (await api.get("/users", { params: clean(params) })).data,

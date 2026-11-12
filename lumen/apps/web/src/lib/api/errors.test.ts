@@ -46,6 +46,11 @@ describe("apiErrorFromResponse", () => {
     expect(err.message).toMatch(/check the highlighted fields/i);
   });
 
+  it("keeps a field that is itself named body", () => {
+    const err = apiErrorFromResponse(422, { detail: [{ loc: ["body", "body"], msg: "Field required" }] });
+    expect(err.fieldErrors).toEqual({ body: "Field required" });
+  });
+
   it("passes plain 422 sentences through, e.g. a pin outside Pasig", () => {
     const err = apiErrorFromResponse(422, { detail: "The pinned location is outside Pasig City. Please move the pin." });
     expect(err.kind).toBe("validation");

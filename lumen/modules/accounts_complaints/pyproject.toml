@@ -1,0 +1,17 @@
+[project]
+name = "lumen-accounts-complaints"
+version = "0.1.0"
+description = "Lumen backend module: accounts, audit logs, complaint records, duplicate prevention"
+requires-python = ">=3.11"
+# Runtime deps come from lumen/apps/api/requirements.txt (shared venv).
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["accounts_complaints", "accounts_complaints.routers", "accounts_complaints.services"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

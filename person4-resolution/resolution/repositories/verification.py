@@ -13,13 +13,15 @@ def lock_complaint(connection: Connection, complaint_id: int) -> dict | None:
 
 
 def insert_confirmation(connection: Connection, complaint_id: int, citizen_id: int, note: str | None,
-                        evidence_media_id: int | None, verdict: str = "confirmed") -> dict:
+                        evidence_media_id: int | None, verdict: str = "confirmed",
+                        ai_comparison: dict | list | str | None = None) -> dict:
     result=connection.execute(text("""
-      INSERT INTO complaint_verifications(complaint_id,citizen_id,verdict,note,evidence_media_id)
-      VALUES(:complaint_id,:citizen_id,:verdict,:note,:evidence_media_id)
-    """),{"complaint_id":complaint_id,"citizen_id":citizen_id,"verdict":verdict,"note":note,"evidence_media_id":evidence_media_id})
+      INSERT INTO complaint_verifications(complaint_id,citizen_id,verdict,note,evidence_media_id,ai_comparison)
+      VALUES(:complaint_id,:citizen_id,:verdict,:note,:evidence_media_id,:ai_comparison)
+    """),{"complaint_id":complaint_id,"citizen_id":citizen_id,"verdict":verdict,"note":note,
+          "evidence_media_id":evidence_media_id,"ai_comparison":ai_comparison})
     return dict(connection.execute(text("""
-      SELECT id,complaint_id,citizen_id,verdict,note,evidence_media_id,created_at
+      SELECT id,complaint_id,citizen_id,verdict,note,evidence_media_id,ai_comparison,created_at
       FROM complaint_verifications WHERE id=:id
     """),{"id":result.lastrowid}).mappings().one())
 

@@ -42,6 +42,9 @@
 - Added rejected citizen verification: records verdict, reopens complaint, sets reopened_at and a new due_at using configured reopen SLA ratio/minimum, writes a due SLA event, and notifies assigned officials in one transaction.
 - Repeated reopen count of two or more also notifies active pasig_admin users.
 - Expanded integration coverage for repeated reopens, new SLA cycles, and admin escalation notifications.
+- Added a `BeforeAfterComparer` protocol and default `NullComparer`; non-null result values are stored in `complaint_verifications.ai_comparison` without calling any AI service.
+- Updated `BLOCKED.md` to keep Lumen/CLIP/AI comparison blocked pending Person 3's implementation and contract.
+- Added a full lifecycle integration test from submitted through claim/progress/Done, rejected/reopened, second Done, and confirmed/resolved; includes missing-photo, invalid transition, permission, and double-submit race assertions.
 
 ## Next
 

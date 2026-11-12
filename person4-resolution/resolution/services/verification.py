@@ -8,7 +8,10 @@ from ..repositories.verification import (add_completed_sla_event, insert_confirm
     write_reopen_history, reopened_count, add_due_sla_event, category_sla_hours)
 from ..security import CurrentUser
 from ..config import get_settings
+from .comparison import BeforeAfterComparer, NullComparer
 from .notifications import COMPLAINT_RESOLVED, COMPLAINT_REOPENED
+
+_comparer: BeforeAfterComparer = NullComparer()
 
 
 def submit_verification(connection: Connection, user: CurrentUser, complaint_id: int, verdict: str,
@@ -23,7 +26,11 @@ def submit_verification(connection: Connection, user: CurrentUser, complaint_id:
     if complaint["status_code"] != "resolved_pending_verification":
         raise HTTPException(409,{"detail":"Complaint is not awaiting verification","code":"INVALID_VERIFICATION_STATE"})
     if verdict == "confirmed":
-        verification=insert_confirmation(connection,complaint_id,user.id,note,evidence_media_id)
+        before_id=connection.execute(__import__('sqlalchemy').text("SELECT id FROM complaint_media WHERE complaint_id=:id AND media_type='before' ORDER BY uploaded_at,id LIMIT 1"),{"id":complaint_id}).scalar_one_or_none()
+        comparison=None
+        if before_id is not None and evidence_media_id is not None:
+            comparison=_comparer.compare(complaint_id,int(before_id),evidence_media_id)
+        verification=insert_confirmation(connection,complaint_id,user.id,note,evidence_media_id,ai_comparison=comparison)
         resolve_complaint(connection,complaint_id)
         write_history(connection,complaint_id,user.id,note)
         write_audit(connection,complaint_id,user.id,verification["id"])

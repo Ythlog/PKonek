@@ -1,4 +1,5 @@
 import pytest
+from concurrent.futures import ThreadPoolExecutor
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -17,17 +18,20 @@ def verification_seed(mysql_test_engine):
         conn.execute(text("INSERT INTO official_profiles(user_id,department_id) VALUES (932,931)"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,assigned_department_id,assigned_official_id,title,description,latitude,longitude) VALUES "
                           "(931,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Verify complaint','Desc',14,121),"
-                          "(932,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Repeat complaint','Desc',14,121)"))
+                          "(932,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Repeat complaint','Desc',14,121),"
+                          "(933,931,931,(SELECT id FROM complaint_statuses WHERE code='submitted'),931,932,'Full flow','Desc',14,121)"))
+        conn.execute(text("INSERT INTO complaint_media(id,complaint_id,uploaded_by,media_type,storage_url,mime_type) VALUES (933,933,931,'before','https://example.test/before933.jpg','image/jpeg')"))
         conn.execute(text("INSERT INTO complaint_support(complaint_id,user_id) VALUES (931,933)"))
     yield
     with mysql_test_engine.begin() as conn:
-        conn.execute(text("DELETE FROM notifications WHERE complaint_id IN (931,932)"))
-        conn.execute(text("DELETE FROM sla_events WHERE complaint_id IN (931,932)"))
-        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint' AND entity_id IN ('931','932')"))
-        conn.execute(text("DELETE FROM complaint_status_history WHERE complaint_id IN (931,932)"))
-        conn.execute(text("DELETE FROM complaint_verifications WHERE complaint_id IN (931,932)"))
+        conn.execute(text("DELETE FROM notifications WHERE complaint_id IN (931,932,933)"))
+        conn.execute(text("DELETE FROM sla_events WHERE complaint_id IN (931,932,933)"))
+        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint' AND entity_id IN ('931','932','933')"))
+        conn.execute(text("DELETE FROM complaint_status_history WHERE complaint_id IN (931,932,933)"))
+        conn.execute(text("DELETE FROM complaint_verifications WHERE complaint_id IN (931,932,933)"))
+        conn.execute(text("DELETE FROM complaint_media WHERE complaint_id=933"))
         conn.execute(text("DELETE FROM complaint_support WHERE complaint_id=931"))
-        conn.execute(text("DELETE FROM complaints WHERE id IN (931,932)"))
+        conn.execute(text("DELETE FROM complaints WHERE id IN (931,932,933)"))
         conn.execute(text("DELETE FROM official_profiles WHERE user_id=932"))
         conn.execute(text("DELETE FROM users WHERE id IN (931,932,933)"))
         conn.execute(text("DELETE FROM complaint_categories WHERE id=931"))
@@ -89,3 +93,47 @@ def test_rejected_verdict_reopens_with_new_sla_and_escalates_after_repeat(verifi
             assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=932 AND notification_type='COMPLAINT_REOPENED' AND user_id=932")).scalar_one()==2
             assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=932 AND notification_type='COMPLAINT_REOPENED' AND user_id IN (SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id WHERE r.name='pasig_admin')")).scalar_one()>=1
     finally: app.dependency_overrides.clear()
+
+
+def test_full_lifecycle_invalid_permissions_and_double_submit(verification_seed,mysql_test_engine,monkeypatch):
+    import resolution.services.verification as verification_service
+    monkeypatch.setattr(verification_routes,"engine",mysql_test_engine)
+    monkeypatch.setattr(verification_service,"_comparer",verification_service.NullComparer())
+    try:
+        app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(932,"official",931)
+        with TestClient(app) as client:
+            invalid=client.post('/api/complaints/933/status',json={'to_status':'resolved','note':'skip'})
+            assert invalid.status_code==409
+            assert client.post('/api/complaints/933/status',json={'to_status':'under_review'}).status_code==200
+            assert client.post('/api/complaints/933/status',json={'to_status':'in_progress'}).status_code==200
+            no_photo=client.post('/api/complaints/933/status',json={'to_status':'resolved_pending_verification','note':'Done'})
+            assert no_photo.status_code==409
+            with mysql_test_engine.begin() as conn:
+                conn.execute(text("INSERT INTO complaint_media(id,complaint_id,uploaded_by,media_type,storage_url,mime_type) VALUES (934,933,932,'after','https://example.test/after933.jpg','image/jpeg')"))
+            done=client.post('/api/complaints/933/status',json={'to_status':'resolved_pending_verification','note':'Done','after_media_id':934})
+            assert done.status_code==200
+        app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(931,"citizen")
+        with TestClient(app) as client:
+            rejected=client.post('/api/complaints/933/verification',json={'verdict':'rejected','note':'Still broken'})
+        assert rejected.status_code==201
+        app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(931,"citizen")
+        with TestClient(app) as client:
+            done_again=client.post('/api/complaints/933/status',json={'to_status':'under_review'})
+        assert done_again.status_code==409
+        app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(932,"official",931)
+        with TestClient(app) as client:
+            assert client.post('/api/complaints/933/status',json={'to_status':'in_progress'}).status_code==200
+            assert client.post('/api/complaints/933/status',json={'to_status':'resolved_pending_verification','note':'Done again','after_media_id':934}).status_code==200
+        app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(931,"citizen")
+        def confirm_once():
+            with TestClient(app) as client:
+                return client.post('/api/complaints/933/verification',json={'verdict':'confirmed'}).status_code
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            race=list(pool.map(lambda _:confirm_once(),range(2)))
+        assert sorted(race)==[201,409]
+        with mysql_test_engine.connect() as conn:
+            assert conn.execute(text("SELECT COUNT(*) FROM complaint_verifications WHERE complaint_id=933 AND verdict='confirmed'")).scalar_one()==1
+    finally:
+        with mysql_test_engine.begin() as conn:
+            conn.execute(text("DELETE FROM complaint_media WHERE id=934"))
+        app.dependency_overrides.clear()

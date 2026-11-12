@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import io
-import uuid
+import json
 from pathlib import Path
 from typing import Annotated
 
 import jwt
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from PIL import Image, UnidentifiedImageError
+import httpx
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
-from supabase import create_client
 
 
 ROOT = Path(__file__).resolve().parent
@@ -32,10 +33,11 @@ class Settings(BaseSettings):
     DB_SSL_CA: str = ""
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
-    SUPABASE_URL: str = ""
-    SUPABASE_SERVICE_KEY: str = ""
-    SUPABASE_STORAGE_BUCKET: str = "complaint-media"
     MEDIA_MAX_SIZE_MB: int = 10
+    LUMEN_OCR_URL: str = "https://api.staging.nonlive.lumen.bayanichain.tech/ocr/documents"
+    LUMEN_API_KEY: str = ""
+    LUMEN_API_SECRET: str = ""
+    LUMEN_OCR_TIMEOUT_SECONDS: int = 60
 
     def ssl_ca_path(self) -> Path | None:
         if not self.DB_SSL_CA:
@@ -49,8 +51,6 @@ if not settings.DATABASE_URL:
     raise RuntimeError("DATABASE_URL must be set in lumen/.env")
 if not settings.JWT_SECRET or settings.JWT_SECRET == "change-me":
     raise RuntimeError("Set a non-default JWT_SECRET in lumen/.env")
-if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
-    raise RuntimeError("Set SUPABASE_URL and SUPABASE_SERVICE_KEY in lumen/.env")
 
 connect_args: dict = {}
 ca_path = settings.ssl_ca_path()
@@ -66,7 +66,6 @@ engine = create_engine(
     pool_recycle=1800,
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 app = FastAPI(title="PKonek Media API", version="0.1.0")
 app.add_middleware(
@@ -78,7 +77,8 @@ app.add_middleware(
 )
 MAX_BYTES = settings.MEDIA_MAX_SIZE_MB * 1024 * 1024
 ALLOWED_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
-ALLOWED_MEDIA_TYPES = {"initial", "progress", "before", "after", "other"}
+ALLOWED_MEDIA_TYPES = {"initial", "progress", "other"}
+OCR_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 
 
 def get_db():
@@ -117,9 +117,112 @@ def require_staff(
     return dict(user)
 
 
+def require_user(
+    authorization: Annotated[str | None, Header()] = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    unauthorized = HTTPException(status_code=401, detail="A valid access token is required")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise unauthorized
+    try:
+        claims = jwt.decode(authorization[7:].strip(), settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_id = int(claims["sub"])
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError):
+        raise unauthorized
+    user = db.execute(text("SELECT id, role, is_active FROM users WHERE id = :id"), {"id": user_id}).mappings().first()
+    if not user or not user["is_active"]:
+        raise unauthorized
+    return dict(user)
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "media"}
+
+
+@app.get("/media/{media_id}/image")
+def get_media_image(
+    media_id: int,
+    db: Session = Depends(get_db),
+    _actor: dict = Depends(require_staff),
+):
+    media = db.execute(
+        text("SELECT image_data, mime_type FROM complaint_media WHERE id=:id"),
+        {"id": media_id},
+    ).mappings().first()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    return Response(content=bytes(media["image_data"]), media_type=media["mime_type"])
+
+
+def _extract_lumen_text(response: httpx.Response) -> str:
+    """Normalize common Lumen JSON/text response shapes for storage."""
+    try:
+        body = response.json()
+    except (ValueError, json.JSONDecodeError):
+        return response.text.strip()
+    if isinstance(body, str):
+        return body.strip()
+    if isinstance(body, dict):
+        for key in ("text", "fullText", "full_text", "extractedText", "extracted_text", "ocr_text"):
+            value = body.get(key)
+            if isinstance(value, str):
+                return value.strip()
+        data = body.get("data")
+        if isinstance(data, dict):
+            return _extract_lumen_text(httpx.Response(200, json=data))
+    return json.dumps(body, ensure_ascii=False)
+
+
+@app.post("/media/{media_id}/ocr")
+async def run_media_ocr(
+    media_id: int,
+    db: Session = Depends(get_db),
+    actor: dict = Depends(require_staff),
+):
+    if not settings.LUMEN_API_KEY or not settings.LUMEN_API_SECRET:
+        raise HTTPException(status_code=503, detail="Lumen OCR credentials are not configured")
+
+    media = db.execute(
+        text("""
+            SELECT id, image_data, mime_type, original_filename
+            FROM complaint_media WHERE id = :id
+        """),
+        {"id": media_id},
+    ).mappings().first()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    if media["mime_type"] not in OCR_MIME_TYPES:
+        raise HTTPException(status_code=415, detail="This media type is not supported by OCR")
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.LUMEN_OCR_TIMEOUT_SECONDS) as client:
+            filename = media["original_filename"] or f"complaint-{media_id}"
+            result = await client.post(
+                settings.LUMEN_OCR_URL,
+                headers={
+                    "lumen-api-key": settings.LUMEN_API_KEY,
+                    "lumen-api-secret": settings.LUMEN_API_SECRET,
+                    "Content-Type": media["mime_type"],
+                    "X-Lumen-Document-Name": filename,
+                },
+                content=bytes(media["image_data"]),
+            )
+            result.raise_for_status()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(status_code=504, detail="Lumen OCR request timed out") from exc
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"Lumen OCR returned HTTP {exc.response.status_code}") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Could not reach Lumen OCR") from exc
+
+    extracted_text = _extract_lumen_text(result)
+    db.execute(
+        text("UPDATE complaint_media SET ocr_text = :ocr_text WHERE id = :id"),
+        {"ocr_text": extracted_text, "id": media_id},
+    )
+    db.commit()
+    return {"mediaId": media_id, "status": "completed", "ocrText": extracted_text}
 
 
 @app.post("/complaints/{complaint_id}/media", status_code=status.HTTP_201_CREATED)
@@ -128,16 +231,26 @@ async def upload_complaint_media(
     file: Annotated[UploadFile, File()],
     media_type: Annotated[str, Form()] = "initial",
     db: Session = Depends(get_db),
-    actor: dict = Depends(require_staff),
+    actor: dict = Depends(require_user),
 ):
     if media_type not in ALLOWED_MEDIA_TYPES:
         raise HTTPException(status_code=422, detail="Unsupported media_type")
 
     complaint = db.execute(
-        text("SELECT id FROM complaints WHERE id = :id"), {"id": complaint_id}
-    ).first()
+        text("SELECT id, created_by_user_id FROM complaints WHERE id = :id"), {"id": complaint_id}
+    ).mappings().first()
     if complaint is None:
         raise HTTPException(status_code=404, detail="Complaint not found")
+    if actor["role"] == "citizen":
+        if media_type != "initial":
+            raise HTTPException(status_code=403, detail="Citizens may upload complaint evidence only")
+        if complaint["created_by_user_id"] != actor["id"]:
+            raise HTTPException(status_code=403, detail="You can upload only to your own complaint")
+    elif actor["role"] in ("official", "pasig_admin"):
+        if media_type not in {"progress", "other"}:
+            raise HTTPException(status_code=403, detail="Staff uploads must be progress media")
+    else:
+        raise HTTPException(status_code=403, detail="Insufficient role")
 
     payload = await file.read(MAX_BYTES + 1)
     if not payload:
@@ -156,29 +269,21 @@ async def upload_complaint_media(
     if mime_type is None:
         raise HTTPException(status_code=415, detail="Only JPEG, PNG, and WebP images are accepted")
 
-    suffix = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[mime_type]
-    object_path = f"complaints/{complaint_id}/{uuid.uuid4().hex}.{suffix}"
     try:
-        supabase.storage.from_(settings.SUPABASE_STORAGE_BUCKET).upload(
-            object_path,
-            payload,
-            file_options={"content-type": mime_type, "upsert": "false"},
-        )
-        storage_url = supabase.storage.from_(settings.SUPABASE_STORAGE_BUCKET).get_public_url(object_path)
         result = db.execute(
             text("""
                 INSERT INTO complaint_media
-                    (complaint_id, uploaded_by, media_type, storage_url, mime_type,
+                    (complaint_id, uploaded_by, media_type, image_data, mime_type,
                      file_size_bytes, original_filename)
                 VALUES
-                    (:complaint_id, :uploaded_by, :media_type, :storage_url, :mime_type,
+                    (:complaint_id, :uploaded_by, :media_type, :image_data, :mime_type,
                      :file_size_bytes, :original_filename)
             """),
             {
                 "complaint_id": complaint_id,
                 "uploaded_by": actor["id"],
                 "media_type": media_type,
-                "storage_url": storage_url,
+                "image_data": payload,
                 "mime_type": mime_type,
                 "file_size_bytes": len(payload),
                 "original_filename": (file.filename or "image")[:255],
@@ -191,17 +296,13 @@ async def upload_complaint_media(
         ).scalar_one()
     except Exception as exc:
         db.rollback()
-        try:
-            supabase.storage.from_(settings.SUPABASE_STORAGE_BUCKET).remove([object_path])
-        except Exception:
-            pass
-        raise HTTPException(status_code=502, detail="Could not store the image and media record") from exc
+        raise HTTPException(status_code=502, detail="Could not store image in MySQL") from exc
 
     return {
         "id": media_id,
         "complaintId": complaint_id,
         "mediaType": media_type,
-        "url": storage_url,
+        "url": f"/media/{media_id}/image",
         "mimeType": mime_type,
         "fileSizeBytes": len(payload),
         "uploadedAt": uploaded.isoformat(),

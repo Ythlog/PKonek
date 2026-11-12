@@ -17,14 +17,14 @@
 SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------
--- Accounts (JWT roles: official, pasig_admin)
+-- Accounts (JWT roles: citizen, official, pasig_admin)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email         VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   full_name     VARCHAR(150) NOT NULL,
-  role          ENUM('official','pasig_admin') NOT NULL,
+  role          ENUM('citizen','official','pasig_admin') NOT NULL,
   barangay      VARCHAR(100) NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   last_login_at DATETIME NULL,

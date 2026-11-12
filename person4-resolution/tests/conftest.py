@@ -1,6 +1,7 @@
 """MySQL integration fixture; requires a local MySQL 8 server and credentials."""
 
 import os
+import socket
 from pathlib import Path
 
 import pytest
@@ -21,7 +22,14 @@ def mysql_test_engine():
         host=os.getenv("MYSQL_HOST", "127.0.0.1"),
         port=int(os.getenv("MYSQL_PORT", "3306")),
     )
-    admin = create_engine(admin_url, isolation_level="AUTOCOMMIT")
+    host = os.getenv("MYSQL_HOST", "127.0.0.1")
+    port = int(os.getenv("MYSQL_PORT", "3306"))
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            pass
+    except OSError:
+        pytest.skip(f"MySQL is not reachable at {host}:{port}")
+    admin = create_engine(admin_url, isolation_level="AUTOCOMMIT", connect_args={"connect_timeout": 2})
     with admin.connect() as connection:
         connection.execute(text("CREATE DATABASE IF NOT EXISTS pkonek_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
     database_url = admin_url.set(database="pkonek_test")

@@ -6,4 +6,3 @@ pydantic-settings
 PyJWT
 python-multipart
 Pillow
-supabase

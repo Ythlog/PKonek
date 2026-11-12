@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKonek - Official Dashboard</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <style>
+        .staff-shell { width: min(1200px, calc(100% - 3rem)); margin: 2rem auto 4rem; }
+        .staff-welcome { margin-bottom: 2rem; }
+        .staff-welcome p { color: #64748b; margin-top: .4rem; }
+        .staff-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin: 1.5rem 0; }
+        .staff-toolbar input, .staff-toolbar select { min-height: 44px; border: 1px solid var(--border-color); border-radius: 8px; padding: .65rem .85rem; background: white; color: var(--text-color); }
+        .staff-toolbar input { flex: 1 1 250px; }
+        .staff-table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--card-shadow); }
+        .staff-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+        .staff-table th, .staff-table td { text-align: left; padding: 1rem; border-bottom: 1px solid #e2e8f0; }
+        .staff-table th { color: #64748b; font-size: .85rem; font-weight: 600; background: #f8fafc; }
+        .staff-table tr:last-child td { border-bottom: 0; }
+        .status-chip { display: inline-block; padding: .25rem .65rem; border-radius: 99px; background: #eff6ff; color: #2563eb; font-size: .8rem; }
+        .staff-panel { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; box-shadow: var(--card-shadow); }
+        .staff-panel p { color: #64748b; }
+        .staff-section { margin-top: 2rem; }
+        @media(max-width: 650px) { .staff-shell { width: min(100% - 2rem, 1200px); } }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav">
+            <div class="nav-brand"><h1 class="site-title">PKonek Official</h1><span class="site-subtitle">Pasig City Complaint Desk</span></div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#complaints">Complaints</a></li>
+                <li class="nav-item"><a class="nav-link" href="#map">Issue Map</a></li>
+                <li class="nav-item"><a class="nav-link" href="#updates">Updates</a></li>
+            </ul>
+            <div class="nav-user"><span class="user-welcome">Local Official</span><button class="btn btn-small" type="button">Account</button></div>
+        </nav>
+    </header>
+    <main class="staff-shell">
+        <section id="dashboard" class="staff-welcome">
+            <h2 class="dashboard-title">Official Dashboard</h2>
+            <p class="dashboard-subtitle">Review community reports and coordinate resolutions.</p>
+        </section>
+        <section class="dashboard-stats">
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Assigned to Me</div><div class="stat-trend">Complaint summary</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Needs Review</div><div class="stat-trend">Awaiting action</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">In Progress</div><div class="stat-trend">Currently active</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Resolved</div><div class="stat-trend">Selected period</div></article>
+        </section>
+        <section id="complaints" class="staff-section">
+            <h2 class="section-title">Complaint Queue</h2>
+            <div class="staff-toolbar"><input type="search" placeholder="Search complaints" aria-label="Search complaints"><select aria-label="Filter by status"><option>All statuses</option><option>Submitted</option><option>In progress</option><option>Resolved</option></select><select aria-label="Filter by category"><option>All categories</option><option>Roads and sidewalks</option><option>Waste and sanitation</option><option>Flooding and drainage</option></select><button class="btn btn-secondary" type="button">Apply filters</button></div>
+            <div class="staff-table-wrap"><table class="staff-table"><thead><tr><th>Report</th><th>Category</th><th>Location</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead><tbody><tr><td colspan="6">Complaint records will appear here when connected to the backend.</td></tr></tbody></table></div>
+        </section>
+        <section id="map" class="staff-section"><h2 class="section-title">Issue Map</h2><div class="staff-panel"><p>Map pins and hotspot information will appear here.</p></div></section>
+        <section id="updates" class="staff-section"><h2 class="section-title">Recent Updates</h2><div class="staff-panel"><p>Complaint activity and citizen updates will appear here.</p></div></section>
+    </main>
+    <footer class="site-footer"><div class="footer-content"><div class="footer-brand"><h3 class="footer-title">PKonek Official Portal</h3><p class="footer-tagline">Pasig City complaint coordination</p><p class="footer-mission">Review reports, post progress updates, support resolutions.</p></div><div class="footer-info"><p>Staff dashboard prototype · Data and actions are placeholders.</p></div></div></footer>
+</body>
+</html>

@@ -1,8 +1,34 @@
 """FastAPI integration points. Scheduler lifecycle is explicit and side-effect free on import."""
 
 from fastapi import APIRouter, FastAPI
+from .config import get_settings
+from .routers.notifications import router as notifications_router
+from .routers.responses import router as responses_router
+from .routers.timeline import router as timeline_router
+from .routers.assignment import router as assignment_router
+from .routers.queue import router as queue_router
+from .routers.status_change import router as status_change_router
+from .routers.verification import router as verification_router
+from .routers.admin_analytics import router as admin_analytics_router
+from .routers.admin_performance import router as admin_performance_router
+from .routers.admin_lists import router as admin_lists_router
+from .routers.official_dashboard import router as official_dashboard_router
+from .routers.public_accountability import router as public_accountability_router
+from . import scheduler as sla_scheduler
 
 router = APIRouter()
+router.include_router(notifications_router, prefix=get_settings().api_prefix)
+router.include_router(responses_router, prefix=get_settings().api_prefix)
+router.include_router(timeline_router, prefix=get_settings().api_prefix)
+router.include_router(assignment_router, prefix=get_settings().api_prefix)
+router.include_router(queue_router, prefix=get_settings().api_prefix)
+router.include_router(status_change_router, prefix=get_settings().api_prefix)
+router.include_router(verification_router, prefix=get_settings().api_prefix)
+router.include_router(admin_analytics_router, prefix=get_settings().api_prefix)
+router.include_router(admin_performance_router, prefix=get_settings().api_prefix)
+router.include_router(admin_lists_router, prefix=get_settings().api_prefix)
+router.include_router(official_dashboard_router, prefix=get_settings().api_prefix)
+router.include_router(public_accountability_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:
@@ -10,9 +36,9 @@ def register(app: FastAPI) -> None:
 
 
 def start_scheduler() -> None:
-    """Scheduler registration will be added with the SLA service."""
+    sla_scheduler.start_scheduler()
 
 
 def stop_scheduler() -> None:
-    """Scheduler shutdown will be added with the SLA service."""
+    sla_scheduler.stop_scheduler()
 

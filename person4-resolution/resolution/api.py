@@ -9,6 +9,7 @@ from .routers.assignment import router as assignment_router
 from .routers.queue import router as queue_router
 from .routers.status_change import router as status_change_router
 from .routers.verification import router as verification_router
+from .routers.admin_analytics import router as admin_analytics_router
 from . import scheduler as sla_scheduler
 
 router = APIRouter()
@@ -19,6 +20,7 @@ router.include_router(assignment_router, prefix=get_settings().api_prefix)
 router.include_router(queue_router, prefix=get_settings().api_prefix)
 router.include_router(status_change_router, prefix=get_settings().api_prefix)
 router.include_router(verification_router, prefix=get_settings().api_prefix)
+router.include_router(admin_analytics_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:

@@ -56,6 +56,8 @@
 - Added injected-clock integration tests for cycle idempotency, target/no-target handling, event details, notifications, and verification pause.
 - Added scheduler job 4 at `due_at + category SLA × ESCALATION_L2_GRACE_RATIO`; it reads the current cycle's maximum escalation level, writes one level-2 escalated event, and notifies active pasig_admin users.
 - Added injected-clock integration coverage for grace threshold, level progression, idempotency, admin notifications, and paused verification state.
+- Added a Pasig-admin-only overview endpoint with total/open/overdue/escalated/resolved cards, reopen rate based on domain metric definition, and grouped counts by status/category/severity.
+- Added seeded MySQL integration test asserting varied card totals and each breakdown.
 
 ## Next
 

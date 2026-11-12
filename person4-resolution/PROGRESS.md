@@ -56,6 +56,17 @@
 - Added injected-clock integration tests for cycle idempotency, target/no-target handling, event details, notifications, and verification pause.
 - Added scheduler job 4 at `due_at + category SLA × ESCALATION_L2_GRACE_RATIO`; it reads the current cycle's maximum escalation level, writes one level-2 escalated event, and notifies active pasig_admin users.
 - Added injected-clock integration coverage for grace threshold, level progression, idempotency, admin notifications, and paused verification state.
+- Added a Pasig-admin-only overview endpoint with total/open/overdue/escalated/resolved cards, reopen rate based on domain metric definition, and grouped counts by status/category/severity.
+- Added seeded MySQL integration test asserting varied card totals and each breakdown.
+- Added Pasig-admin performance metrics for verification rates per official/department (confirmed divided by confirmed plus rejected, excluding auto_timeout) and average first response, average first Done resolution, and SLA compliance.
+- Added seeded integration tests proving citizen rejection lowers the verification rate, auto_timeout is excluded, and time/SLA statistics follow domain metric definitions.
+- Added official dashboard endpoint reusing overview, grouped counts, verification-rate, and response-time aggregate functions with a required department filter.
+- Extended existing aggregate functions with optional department scoping, including reopen-rate subquery; added integration test proving another department's data is absent.
+- Added unauthenticated department accountability board with aggregate complaint totals, average first-response hours, SLA compliance, and verified-resolution rate; response sets `Cache-Control: max-age=60` and contains no personal/complaint-level fields.
+- Added `services/accountability_barangay.py` placeholder raising `NotImplementedError`, documented its future query after Person 2 adds `barangay_id`, and listed the blocker in `BLOCKED.md`; no schema/table changes were made.
+- Added MySQL integration test verifying aggregate values, cache header, and absence of seeded PII.
+- Added Pasig-admin daily trend endpoint in Recharts-ready `{date, submitted, resolved, reopened}` shape with inclusive date range, plus paginated level-2 escalation and unassigned complaint lists.
+- Added seeded integration tests asserting daily buckets (including zero days), level-2 red list membership, unassigned membership, and pagination totals.
 
 ## Next
 

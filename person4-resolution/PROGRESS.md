@@ -48,6 +48,9 @@
 - Added an explicitly started APScheduler with configured SLA interval and API lifecycle wiring; import has no scheduler side effect.
 - Added an idempotent due_at backfill using domain `due_at`, row-level `FOR UPDATE SKIP LOCKED`, guarded update, and a single `due` SLA event containing deadline and cycle metadata.
 - Added a MySQL integration test that runs backfill twice and verifies only one deadline/event is created; clock injection is supported by the job function.
+- Added scheduler job 2 for SLA warnings at the configured elapsed ratio, using an injected clock, row locking with `SKIP LOCKED`, and cycle-keyed event idempotency.
+- Warning job skips `resolved_pending_verification` complaints and sends `SLA_WARNING` to the assigned official and active officials in the assigned department.
+- Added integration coverage for threshold timing, once-per-cycle notification/event creation, and the paused verification state.
 
 ## Next
 

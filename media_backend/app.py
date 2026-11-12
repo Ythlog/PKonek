@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import uuid
 from pathlib import Path
 from typing import Annotated
@@ -12,6 +13,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from PIL import Image, UnidentifiedImageError
+import httpx
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from supabase import create_client
@@ -36,6 +38,10 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = ""
     SUPABASE_STORAGE_BUCKET: str = "complaint-media"
     MEDIA_MAX_SIZE_MB: int = 10
+    LUMEN_OCR_URL: str = "https://api.staging.nonlive.lumen.bayanichain.tech/ocr/documents"
+    LUMEN_API_KEY: str = ""
+    LUMEN_API_SECRET: str = ""
+    LUMEN_OCR_TIMEOUT_SECONDS: int = 60
 
     def ssl_ca_path(self) -> Path | None:
         if not self.DB_SSL_CA:
@@ -79,6 +85,7 @@ app.add_middleware(
 MAX_BYTES = settings.MEDIA_MAX_SIZE_MB * 1024 * 1024
 ALLOWED_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
 ALLOWED_MEDIA_TYPES = {"initial", "progress", "before", "after", "other"}
+OCR_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 
 
 def get_db():
@@ -120,6 +127,78 @@ def require_staff(
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "media"}
+
+
+def _extract_lumen_text(response: httpx.Response) -> str:
+    """Normalize common Lumen JSON/text response shapes for storage."""
+    try:
+        body = response.json()
+    except (ValueError, json.JSONDecodeError):
+        return response.text.strip()
+    if isinstance(body, str):
+        return body.strip()
+    if isinstance(body, dict):
+        for key in ("text", "fullText", "full_text", "extractedText", "extracted_text", "ocr_text"):
+            value = body.get(key)
+            if isinstance(value, str):
+                return value.strip()
+        data = body.get("data")
+        if isinstance(data, dict):
+            return _extract_lumen_text(httpx.Response(200, json=data))
+    return json.dumps(body, ensure_ascii=False)
+
+
+@app.post("/media/{media_id}/ocr")
+async def run_media_ocr(
+    media_id: int,
+    db: Session = Depends(get_db),
+    actor: dict = Depends(require_staff),
+):
+    if not settings.LUMEN_API_KEY or not settings.LUMEN_API_SECRET:
+        raise HTTPException(status_code=503, detail="Lumen OCR credentials are not configured")
+
+    media = db.execute(
+        text("""
+            SELECT id, storage_url, mime_type, original_filename
+            FROM complaint_media WHERE id = :id
+        """),
+        {"id": media_id},
+    ).mappings().first()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    if media["mime_type"] not in OCR_MIME_TYPES:
+        raise HTTPException(status_code=415, detail="This media type is not supported by OCR")
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.LUMEN_OCR_TIMEOUT_SECONDS) as client:
+            stored = await client.get(media["storage_url"])
+            stored.raise_for_status()
+            filename = media["original_filename"] or f"complaint-{media_id}"
+            result = await client.post(
+                settings.LUMEN_OCR_URL,
+                headers={
+                    "lumen-api-key": settings.LUMEN_API_KEY,
+                    "lumen-api-secret": settings.LUMEN_API_SECRET,
+                    "Content-Type": media["mime_type"],
+                    "X-Lumen-Document-Name": filename,
+                },
+                content=stored.content,
+            )
+            result.raise_for_status()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(status_code=504, detail="Lumen OCR request timed out") from exc
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"Lumen OCR returned HTTP {exc.response.status_code}") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Could not reach Lumen OCR") from exc
+
+    extracted_text = _extract_lumen_text(result)
+    db.execute(
+        text("UPDATE complaint_media SET ocr_text = :ocr_text WHERE id = :id"),
+        {"ocr_text": extracted_text, "id": media_id},
+    )
+    db.commit()
+    return {"mediaId": media_id, "status": "completed", "ocrText": extracted_text}
 
 
 @app.post("/complaints/{complaint_id}/media", status_code=status.HTTP_201_CREATED)

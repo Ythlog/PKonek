@@ -14,13 +14,21 @@ are stored in Supabase Storage; MySQL stores their URL and metadata.
 On success it returns the media row ID, complaint ID, type, URL, MIME type,
 size, and upload timestamp. It rejects invalid images and unknown complaints.
 
+`POST /media/{media_id}/ocr` sends a stored JPEG, PNG, WebP, or PDF to the
+Lumen staging OCR endpoint and saves the returned text in
+`complaint_media.ocr_text`. It requires a staff JWT and configured Lumen API
+credentials. If Lumen returns a response shape other than common text fields,
+update `_extract_lumen_text` in `app.py` to match the documented response.
+
 ## Setup
 
 1. Apply `lumen/modules/accounts_complaints/schema.sql` to the target MySQL
    database, then apply this folder's `schema.sql`.
 2. In `lumen/.env`, configure `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_URL`,
    `SUPABASE_SERVICE_KEY`, and optionally `SUPABASE_STORAGE_BUCKET` and
-   `MEDIA_MAX_SIZE_MB`. Keep the Supabase service key server-side.
+   `MEDIA_MAX_SIZE_MB`. Set `LUMEN_API_KEY` and `LUMEN_API_SECRET` there for OCR.
+   The staging URL is configured by default and can be overridden with
+   `LUMEN_OCR_URL`. Keep all service credentials server-side.
 3. Create the named bucket in Supabase Storage and make it public for the
    returned public image URLs. Private bucket access needs a signed-URL contract.
 4. From this folder, install `requirements.txt` and run

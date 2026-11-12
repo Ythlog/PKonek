@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKonek - Pasig Admin Dashboard</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <style>
+        .staff-shell { width: min(1200px, calc(100% - 3rem)); margin: 2rem auto 4rem; }
+        .staff-welcome { margin-bottom: 2rem; }
+        .staff-welcome p { color: #64748b; margin-top: .4rem; }
+        .staff-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .staff-panel { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; box-shadow: var(--card-shadow); }
+        .staff-panel h3 { margin-bottom: .5rem; }
+        .staff-panel p { color: #64748b; }
+        .staff-section { margin-top: 2rem; }
+        .staff-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+        .staff-toolbar input, .staff-toolbar select { min-height: 44px; border: 1px solid var(--border-color); border-radius: 8px; padding: .65rem .85rem; background: white; color: var(--text-color); }
+        .staff-table-wrap { overflow-x: auto; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--card-shadow); }
+        .staff-table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        .staff-table th, .staff-table td { text-align: left; padding: 1rem; border-bottom: 1px solid #e2e8f0; }
+        .staff-table th { color: #64748b; font-size: .85rem; background: #f8fafc; }
+        @media(max-width: 700px) { .staff-shell { width: min(100% - 2rem, 1200px); } .staff-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav">
+            <div class="nav-brand"><h1 class="site-title">PKonek Admin</h1><span class="site-subtitle">Pasig City Platform Management</span></div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#reports">Reports</a></li>
+                <li class="nav-item"><a class="nav-link" href="#users">Users & Roles</a></li>
+                <li class="nav-item"><a class="nav-link" href="#audit">Activity</a></li>
+            </ul>
+            <div class="nav-user"><span class="user-welcome">Pasig Admin</span><button class="btn btn-small" type="button">Account</button></div>
+        </nav>
+    </header>
+    <main class="staff-shell">
+        <section id="dashboard" class="staff-welcome"><h2 class="dashboard-title">Pasig Admin Dashboard</h2><p class="dashboard-subtitle">Monitor citywide complaint handling and platform activity.</p></section>
+        <section class="dashboard-stats">
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Total Reports</div><div class="stat-trend">Selected period</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Open Reports</div><div class="stat-trend">Across departments</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Resolution Rate</div><div class="stat-trend">Citywide performance</div></article>
+            <article class="stat-card"><div class="stat-value">—</div><div class="stat-label">Avg. Response</div><div class="stat-trend">Response-time measure</div></article>
+        </section>
+        <section id="reports" class="staff-section"><h2 class="section-title">Citywide Monitoring</h2><div class="staff-grid"><article class="staff-panel"><h3>Complaint Trends</h3><p>Category and time-based analytics will appear here.</p></article><article class="staff-panel"><h3>Map & Hotspots</h3><p>Citywide complaint markers and hotspot summaries will appear here.</p></article></div></section>
+        <section id="users" class="staff-section"><h2 class="section-title">Users & Roles</h2><div class="staff-toolbar"><input type="search" placeholder="Search users" aria-label="Search users"><select aria-label="Filter by role"><option>All roles</option><option>Citizen</option><option>Local official</option><option>Pasig admin</option></select><button class="btn btn-secondary" type="button">Filter users</button></div><div class="staff-table-wrap"><table class="staff-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Account status</th><th>Action</th></tr></thead><tbody><tr><td colspan="5">User records and role controls will appear here when connected to the backend.</td></tr></tbody></table></div></section>
+        <section id="audit" class="staff-section"><h2 class="section-title">Platform Activity</h2><div class="staff-panel"><p>Audit events, account activity, and overdue escalations will appear here.</p></div></section>
+    </main>
+    <footer class="site-footer"><div class="footer-content"><div class="footer-brand"><h3 class="footer-title">PKonek Pasig Admin</h3><p class="footer-tagline">Citywide transparency and coordination</p><p class="footer-mission">Monitor service performance and platform activity.</p></div><div class="footer-info"><p>Admin dashboard prototype · Data and actions are placeholders.</p></div></div></footer>
+</body>
+</html>

@@ -39,6 +39,9 @@
 - Implemented only confirmed citizen verification: original-citizen ownership and pending-verification status checks, confirmation row, resolved status/verified timestamp, history/audit, completed SLA event, and COMPLAINT_RESOLVED notifications within one transaction.
 - Rejected verification currently returns HTTP 400 for the planned follow-up step.
 - Added MySQL integration tests for confirmed side effects, actor/state restrictions, and rejected-verdict behavior.
+- Added rejected citizen verification: records verdict, reopens complaint, sets reopened_at and a new due_at using configured reopen SLA ratio/minimum, writes a due SLA event, and notifies assigned officials in one transaction.
+- Repeated reopen count of two or more also notifies active pasig_admin users.
+- Expanded integration coverage for repeated reopens, new SLA cycles, and admin escalation notifications.
 
 ## Next
 

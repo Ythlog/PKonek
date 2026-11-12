@@ -16,17 +16,18 @@ def verification_seed(mysql_test_engine):
                           "(931,1,'verify-cit@test.invalid','x','V','Citizen'),(932,2,'verify-off@test.invalid','x','V','Official'),(933,1,'verify-support@test.invalid','x','V','Support')"))
         conn.execute(text("INSERT INTO official_profiles(user_id,department_id) VALUES (932,931)"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,assigned_department_id,assigned_official_id,title,description,latitude,longitude) VALUES "
-                          "(931,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Verify complaint','Desc',14,121)"))
+                          "(931,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Verify complaint','Desc',14,121),"
+                          "(932,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Repeat complaint','Desc',14,121)"))
         conn.execute(text("INSERT INTO complaint_support(complaint_id,user_id) VALUES (931,933)"))
     yield
     with mysql_test_engine.begin() as conn:
-        conn.execute(text("DELETE FROM notifications WHERE complaint_id=931"))
-        conn.execute(text("DELETE FROM sla_events WHERE complaint_id=931"))
-        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint' AND entity_id='931'"))
-        conn.execute(text("DELETE FROM complaint_status_history WHERE complaint_id=931"))
-        conn.execute(text("DELETE FROM complaint_verifications WHERE complaint_id=931"))
+        conn.execute(text("DELETE FROM notifications WHERE complaint_id IN (931,932)"))
+        conn.execute(text("DELETE FROM sla_events WHERE complaint_id IN (931,932)"))
+        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint' AND entity_id IN ('931','932')"))
+        conn.execute(text("DELETE FROM complaint_status_history WHERE complaint_id IN (931,932)"))
+        conn.execute(text("DELETE FROM complaint_verifications WHERE complaint_id IN (931,932)"))
         conn.execute(text("DELETE FROM complaint_support WHERE complaint_id=931"))
-        conn.execute(text("DELETE FROM complaints WHERE id=931"))
+        conn.execute(text("DELETE FROM complaints WHERE id IN (931,932)"))
         conn.execute(text("DELETE FROM official_profiles WHERE user_id=932"))
         conn.execute(text("DELETE FROM users WHERE id IN (931,932,933)"))
         conn.execute(text("DELETE FROM complaint_categories WHERE id=931"))
@@ -64,4 +65,27 @@ def test_only_original_citizen_and_awaiting_status_can_confirm(verification_seed
             rejected=client.post('/api/complaints/931/verification',json={'verdict':'rejected'})
         assert wrong_state.status_code==409
         assert rejected.status_code==400
+    finally: app.dependency_overrides.clear()
+
+
+def test_rejected_verdict_reopens_with_new_sla_and_escalates_after_repeat(verification_seed,mysql_test_engine,monkeypatch):
+    monkeypatch.setattr(verification_routes,"engine",mysql_test_engine)
+    app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(931,"citizen")
+    try:
+        with TestClient(app) as client:
+            first=client.post('/api/complaints/932/verification',json={'verdict':'rejected','note':'Still broken'})
+        assert first.status_code==201 and first.json()['status_code']=='reopened'
+        with mysql_test_engine.begin() as conn:
+            conn.execute(text("UPDATE complaints SET status_id=(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification') WHERE id=932"))
+        with TestClient(app) as client:
+            second=client.post('/api/complaints/932/verification',json={'verdict':'rejected','note':'Still broken again'})
+        assert second.status_code==201
+        with mysql_test_engine.connect() as conn:
+            row=conn.execute(text("SELECT s.code,c.reopened_at,c.due_at FROM complaints c JOIN complaint_statuses s ON s.id=c.status_id WHERE c.id=932")).one()
+            assert row[0]=='reopened' and row[1] is not None
+            assert row[2] >= row[1] + __import__('datetime').timedelta(hours=4)
+            assert conn.execute(text("SELECT COUNT(*) FROM complaint_verifications WHERE complaint_id=932 AND verdict='rejected'")).scalar_one()==2
+            assert conn.execute(text("SELECT COUNT(*) FROM sla_events WHERE complaint_id=932 AND event_type='due'")).scalar_one()==2
+            assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=932 AND notification_type='COMPLAINT_REOPENED' AND user_id=932")).scalar_one()==2
+            assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=932 AND notification_type='COMPLAINT_REOPENED' AND user_id IN (SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id WHERE r.name='pasig_admin')")).scalar_one()>=1
     finally: app.dependency_overrides.clear()

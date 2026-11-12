@@ -17,21 +17,47 @@
 - Recorded that Step 4 should validate the referenced media row belongs to the complaint and has `media_type = 'after'`.
 - Attempted folder-local venv setup. `ensurepip` was blocked copying its bundled wheel into sandbox temp; package installation was blocked by unavailable DNS to PyPI. `python -m pytest -q` was run and failed because pytest is not installed.
 - Checked MySQL reachability: `127.0.0.1:3306` is not reachable, so `pkonek_test` migration verification cannot run here.
+- Implemented notification type constants, transaction-scoped `notify`/recipient helpers, and raw-SQL repositories for list/count/read operations.
+- Added authenticated notification list, unread-count, mark-read, and mark-all-read routes with ownership scoping and `{detail, code}` error bodies.
+- Added MySQL integration tests for recipient selection, persistence, pagination/filtering, and cross-user isolation; tests skip promptly if MySQL is unreachable.
+- Fixed the default database URL reference so the FastAPI application imports correctly.
+- Implemented official response request/response schemas, repository writes, authorization service, and POST `/api/complaints/{complaint_id}/responses` route.
+- Response insert, audit log insert, and public citizen/supporter notifications execute within one transaction. Private responses do not notify.
+- Added MySQL integration tests for public/private notification behavior, audit persistence, and department authorization.
+- Implemented the authenticated complaint timeline endpoint, merging status history, responses, and SLA events in timestamp order.
+- Citizen timeline access is limited to their own complaint and public history/responses; officials and admins receive all event types and visibility.
+- Added MySQL integration tests covering visibility, ownership, merged item types, and ordering.
+- Implemented official claim, administrator department/official assignment, and category-based auto-assignment with lowest-priority selection.
+- Assignment writes, audit records, status history for claims, and ASSIGNED notifications share one transaction; officials are constrained by department or direct assignment.
+- Added MySQL integration coverage for claim/history/audit/notification, admin reassignment, access denial, routing priority, and unroutable complaints.
+- Implemented authenticated official/admin queue with department scoping, status/category/severity/overdue/assigned-to-me filters, pagination, support count, overdue flag, and time-left seconds.
+- Queue uses MySQL `CASE` ordering for explicit critical/high/medium/low/NULL severity rank, after overdue-first ordering.
+- Added MySQL integration coverage for risk order, null severity, derived fields, and filters.
+- Implemented status-change endpoint with row locking, old-status transition validation through the domain state machine, actor authorization, and one-transaction status history/audit/notification writes.
+- Completion-for-verification checks for an existing complaint_media row with media_type `after`; it sets resolved_at and sends the citizen VERIFICATION_REQUESTED. No media rows are inserted.
+- Added MySQL integration tests for valid/missing/wrong after-photo, invalid transition, ownership denial, and atomic side effects.
+- Implemented only confirmed citizen verification: original-citizen ownership and pending-verification status checks, confirmation row, resolved status/verified timestamp, history/audit, completed SLA event, and COMPLAINT_RESOLVED notifications within one transaction.
+- Rejected verification currently returns HTTP 400 for the planned follow-up step.
+- Added MySQL integration tests for confirmed side effects, actor/state restrictions, and rejected-verdict behavior.
+- Added rejected citizen verification: records verdict, reopens complaint, sets reopened_at and a new due_at using configured reopen SLA ratio/minimum, writes a due SLA event, and notifies assigned officials in one transaction.
+- Repeated reopen count of two or more also notifies active pasig_admin users.
+- Expanded integration coverage for repeated reopens, new SLA cycles, and admin escalation notifications.
+- Added a `BeforeAfterComparer` protocol and default `NullComparer`; non-null result values are stored in `complaint_verifications.ai_comparison` without calling any AI service.
+- Updated `BLOCKED.md` to keep Lumen/CLIP/AI comparison blocked pending Person 3's implementation and contract.
+- Added a full lifecycle integration test from submitted through claim/progress/Done, rejected/reopened, second Done, and confirmed/resolved; includes missing-photo, invalid transition, permission, and double-submit race assertions.
 
 ## Next
 
 - Replace the provisional auth seam when Person 2 delivers the real auth contract.
 - Run `python -m pytest -q` once pytest can be installed in `person4-resolution/.venv`.
-- Implement verification, routing, SLA/escalation, and response workflows in a later task step after teammate contracts arrive.
+- Implement verification, routing, and SLA/escalation workflow routes in later steps after teammate contracts arrive.
 - Run the MySQL fixture on an available MySQL 8 instance and verify migration application.
-- User to run `git switch -c feature/person4-resolution`; the requested single attempt failed because Git could not create `.git/refs/heads/feature/person4-resolution`. Per instruction, no retry or workaround was attempted.
+- Commit the notification implementation after final path/status review.
 
 ## Assumptions
 
 - The tracked root `db/schema.sql` is the schema snapshot to use; it includes the required tables, roles, and status codes.
 - Authentication claims use `sub` and `role`, as specified; official department is looked up from `official_profiles`.
 - DB datetimes use UTC and `DATETIME(3)`.
-- Git branch setup is blocked by permission creating `.git/refs/heads/feature/person4-resolution`; all changes remain unstaged and no commit was attempted.
-- Pytest is unavailable and could not be installed because ensurepip temp writes are denied and PyPI DNS is unavailable; the real pytest command was executed and failed with `No module named pytest`.
-- The MySQL test service is unavailable at `127.0.0.1:3306`.
+- The configured MySQL server is unreachable from this sandbox at `127.0.0.1:3306`; integration tests should run in the user's environment.
 

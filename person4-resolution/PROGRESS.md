@@ -24,12 +24,15 @@
 - Implemented official response request/response schemas, repository writes, authorization service, and POST `/api/complaints/{complaint_id}/responses` route.
 - Response insert, audit log insert, and public citizen/supporter notifications execute within one transaction. Private responses do not notify.
 - Added MySQL integration tests for public/private notification behavior, audit persistence, and department authorization.
+- Implemented the authenticated complaint timeline endpoint, merging status history, responses, and SLA events in timestamp order.
+- Citizen timeline access is limited to their own complaint and public history/responses; officials and admins receive all event types and visibility.
+- Added MySQL integration tests covering visibility, ownership, merged item types, and ordering.
 
 ## Next
 
 - Replace the provisional auth seam when Person 2 delivers the real auth contract.
 - Run `python -m pytest -q` once pytest can be installed in `person4-resolution/.venv`.
-- Implement verification, routing, SLA/escalation, and remaining workflow routes in later steps after teammate contracts arrive.
+- Implement verification, routing, and SLA/escalation workflow routes in later steps after teammate contracts arrive.
 - Run the MySQL fixture on an available MySQL 8 instance and verify migration application.
 - Commit the notification implementation after final path/status review.
 

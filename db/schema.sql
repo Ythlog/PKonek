@@ -5,10 +5,10 @@
 
 CREATE DATABASE IF NOT EXISTS pkonek
   CHARACTER SET utf8mb4
-  COLLATE utf8mb4_0900_ai_ci;
+  COLLATE utf8mb4_unicode_ci;
 USE pkonek;
 
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
   id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(40) NOT NULL,
   description VARCHAR(255) NULL,
@@ -16,7 +16,7 @@ CREATE TABLE roles (
   UNIQUE KEY uq_roles_name (name)
 ) ENGINE=InnoDB;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   role_id TINYINT UNSIGNED NOT NULL,
   email VARCHAR(254) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE users (
   CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS departments (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(150) NOT NULL,
   description VARCHAR(500) NULL,
@@ -47,7 +47,7 @@ CREATE TABLE departments (
   UNIQUE KEY uq_departments_name (name)
 ) ENGINE=InnoDB;
 
-CREATE TABLE official_profiles (
+CREATE TABLE IF NOT EXISTS official_profiles (
   user_id BIGINT UNSIGNED NOT NULL,
   department_id BIGINT UNSIGNED NULL,
   employee_code VARCHAR(80) NULL,
@@ -60,7 +60,7 @@ CREATE TABLE official_profiles (
   CONSTRAINT fk_official_verified_by FOREIGN KEY (verified_by) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_categories (
+CREATE TABLE IF NOT EXISTS complaint_categories (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
   description VARCHAR(500) NULL,
@@ -71,7 +71,7 @@ CREATE TABLE complaint_categories (
   UNIQUE KEY uq_categories_name (name)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_statuses (
+CREATE TABLE IF NOT EXISTS complaint_statuses (
   id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
   code VARCHAR(40) NOT NULL,
   label VARCHAR(80) NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE complaint_statuses (
   UNIQUE KEY uq_status_sort (sort_order)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaints (
+CREATE TABLE IF NOT EXISTS complaints (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   public_id CHAR(12) NULL,
   citizen_id BIGINT UNSIGNED NOT NULL,
@@ -98,7 +98,6 @@ CREATE TABLE complaints (
   address_text VARCHAR(500) NULL,
   latitude DECIMAL(10,7) NOT NULL,
   longitude DECIMAL(10,7) NOT NULL,
-  location_point POINT NOT NULL SRID 4326,
   submitted_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   due_at DATETIME(3) NULL,
   resolved_at DATETIME(3) NULL,
@@ -111,7 +110,7 @@ CREATE TABLE complaints (
   KEY ix_complaints_status_category (status_id, category_id, submitted_at),
   KEY ix_complaints_department_status (assigned_department_id, status_id, due_at),
   KEY ix_complaints_official (assigned_official_id, status_id),
-  SPATIAL INDEX sx_complaints_location (location_point),
+  KEY ix_complaints_location (latitude, longitude),
   CONSTRAINT fk_complaints_citizen FOREIGN KEY (citizen_id) REFERENCES users(id),
   CONSTRAINT fk_complaints_category FOREIGN KEY (category_id) REFERENCES complaint_categories(id),
   CONSTRAINT fk_complaints_status FOREIGN KEY (status_id) REFERENCES complaint_statuses(id),
@@ -122,7 +121,7 @@ CREATE TABLE complaints (
   CONSTRAINT chk_complaint_severity_score CHECK (severity_score IS NULL OR severity_score BETWEEN 0 AND 100)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_media (
+CREATE TABLE IF NOT EXISTS complaint_media (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   complaint_id BIGINT UNSIGNED NOT NULL,
   uploaded_by BIGINT UNSIGNED NOT NULL,
@@ -140,7 +139,7 @@ CREATE TABLE complaint_media (
   CONSTRAINT fk_media_uploader FOREIGN KEY (uploaded_by) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_support (
+CREATE TABLE IF NOT EXISTS complaint_support (
   complaint_id BIGINT UNSIGNED NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -150,7 +149,7 @@ CREATE TABLE complaint_support (
   CONSTRAINT fk_support_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_status_history (
+CREATE TABLE IF NOT EXISTS complaint_status_history (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   complaint_id BIGINT UNSIGNED NOT NULL,
   old_status_id TINYINT UNSIGNED NULL,
@@ -167,7 +166,7 @@ CREATE TABLE complaint_status_history (
   CONSTRAINT fk_history_actor FOREIGN KEY (changed_by) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE complaint_responses (
+CREATE TABLE IF NOT EXISTS complaint_responses (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   complaint_id BIGINT UNSIGNED NOT NULL,
   author_id BIGINT UNSIGNED NOT NULL,
@@ -181,7 +180,7 @@ CREATE TABLE complaint_responses (
   CONSTRAINT fk_responses_author FOREIGN KEY (author_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
   complaint_id BIGINT UNSIGNED NULL,
@@ -196,7 +195,7 @@ CREATE TABLE notifications (
   CONSTRAINT fk_notifications_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE sla_events (
+CREATE TABLE IF NOT EXISTS sla_events (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   complaint_id BIGINT UNSIGNED NOT NULL,
   event_type ENUM('due','warning','overdue','escalated','completed') NOT NULL,
@@ -208,7 +207,7 @@ CREATE TABLE sla_events (
   CONSTRAINT fk_sla_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   actor_user_id BIGINT UNSIGNED NULL,
   action VARCHAR(100) NOT NULL,
@@ -225,7 +224,7 @@ CREATE TABLE audit_logs (
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE ai_writing_sessions (
+CREATE TABLE IF NOT EXISTS ai_writing_sessions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
   complaint_id BIGINT UNSIGNED NULL,

@@ -62,6 +62,9 @@
 - Added seeded integration tests proving citizen rejection lowers the verification rate, auto_timeout is excluded, and time/SLA statistics follow domain metric definitions.
 - Added official dashboard endpoint reusing overview, grouped counts, verification-rate, and response-time aggregate functions with a required department filter.
 - Extended existing aggregate functions with optional department scoping, including reopen-rate subquery; added integration test proving another department's data is absent.
+- Added unauthenticated department accountability board with aggregate complaint totals, average first-response hours, SLA compliance, and verified-resolution rate; response sets `Cache-Control: max-age=60` and contains no personal/complaint-level fields.
+- Added `services/accountability_barangay.py` placeholder raising `NotImplementedError`, documented its future query after Person 2 adds `barangay_id`, and listed the blocker in `BLOCKED.md`; no schema/table changes were made.
+- Added MySQL integration test verifying aggregate values, cache header, and absence of seeded PII.
 - Added Pasig-admin daily trend endpoint in Recharts-ready `{date, submitted, resolved, reopened}` shape with inclusive date range, plus paginated level-2 escalation and unassigned complaint lists.
 - Added seeded integration tests asserting daily buckets (including zero days), level-2 red list membership, unassigned membership, and pagination totals.
 

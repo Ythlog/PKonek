@@ -13,6 +13,7 @@ from .routers.admin_analytics import router as admin_analytics_router
 from .routers.admin_performance import router as admin_performance_router
 from .routers.admin_lists import router as admin_lists_router
 from .routers.official_dashboard import router as official_dashboard_router
+from .routers.public_accountability import router as public_accountability_router
 from . import scheduler as sla_scheduler
 
 router = APIRouter()
@@ -27,6 +28,7 @@ router.include_router(admin_analytics_router, prefix=get_settings().api_prefix)
 router.include_router(admin_performance_router, prefix=get_settings().api_prefix)
 router.include_router(admin_lists_router, prefix=get_settings().api_prefix)
 router.include_router(official_dashboard_router, prefix=get_settings().api_prefix)
+router.include_router(public_accountability_router, prefix=get_settings().api_prefix)
 
 
 def register(app: FastAPI) -> None:

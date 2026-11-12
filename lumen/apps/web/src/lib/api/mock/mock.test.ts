@@ -117,6 +117,7 @@ describe("complaints", () => {
   });
 
   it("returns 409 with candidates when filing a duplicate", async () => {
+    await signIn("citizen@pkonek.demo");
     const err = await rejection(api.complaints.create({ category_id: 2, title: "Flooding here", description: "Water everywhere", ...near(0.0001) }));
     expect(err.kind).toBe("duplicate");
     expect(err.duplicate?.candidates[0].id).toBe(1);
@@ -133,13 +134,25 @@ describe("complaints", () => {
     expect(err.fieldErrors).toMatchObject({ title: expect.stringMatching(/at least 3/), description: expect.stringMatching(/at least 5/) });
   });
 
-  it("files an anonymous complaint and hides reporter details from the public", async () => {
-    const created = await api.complaints.create({
-      category_id: 1, title: "Pothole on Julia Vargas", description: "Deep pothole in the middle lane",
-      latitude: 14.5865, longitude: 121.0615, reporter_name: "Lea", reporter_contact: "0917",
-    });
+  it("requires a citizen login to file a complaint, like the backend", async () => {
+    const input = { category_id: 1, title: "Pothole on Julia Vargas", description: "Deep pothole in the middle lane", latitude: 14.5865, longitude: 121.0615 };
+    expect((await rejection(api.complaints.create(input))).message).toMatch(/session has ended|sign in/i);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.create(input))).status).toBe(401);
+    await signIn("citizen@pkonek.demo");
+    const created = await api.complaints.create(input);
     expect(created).toMatchObject({ status: "open", report_count: 1, reference_no: "PSG-2026-000031" });
     expect(created).not.toHaveProperty("reporter_contact");
+  });
+
+  it("lets citizens upload evidence to their own complaints only", async () => {
+    await signIn("citizen@pkonek.demo");
+    const photo = new File([new Uint8Array(10)], "drain.jpg", { type: "image/jpeg" });
+    await expect(api.media.upload(1, photo, "initial")).resolves.toMatchObject({ complaintId: 1, mediaType: "initial" });
+    expect((await rejection(api.media.upload(5, photo, "initial"))).status).toBe(403);
+    expect((await rejection(api.media.upload(1, photo, "progress"))).status).toBe(403);
+    const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "big.jpg", { type: "image/jpeg" });
+    expect((await rejection(api.media.upload(1, big, "initial"))).status).toBe(413);
   });
 
   it("links a citizen's report to their account and lists it under mine", async () => {

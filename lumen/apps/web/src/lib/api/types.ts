@@ -3,12 +3,8 @@
  * Field names stay snake_case to match the JSON exactly.
  */
 
-/** Backend roles. */
 export type StaffRole = "official" | "pasig_admin";
-/**
- * Frontend roles. "citizen" does not exist in the backend yet.
- * TODO(backend): add a citizen role plus POST /auth/register.
- */
+/** Backend roles (schemas.Role). */
 export type Role = "citizen" | StaffRole;
 
 export type ComplaintStatus = "open" | "in_progress" | "resolved" | "rejected";
@@ -52,7 +48,10 @@ export type User = {
   created_at: string;
 };
 
-/** Mock only until the backend has citizen accounts. */
+/**
+ * POST /auth/register takes email, password and full_name.
+ * barangay and contact_number are kept by the demo mock only.
+ */
 export type CitizenRegisterRequest = {
   full_name: string;
   email: string;
@@ -220,7 +219,13 @@ export type ComplaintFilters = Partial<{
 }>;
 
 // ---------- Media (media_backend) ----------
-export type MediaType = "initial" | "progress" | "before" | "after" | "other";
+/** Citizens upload "initial" evidence to their own complaint; staff upload "progress" or "other". */
+export type MediaType = "initial" | "progress" | "other";
+
+export const PHOTO_RULES = {
+  maxBytes: 10 * 1024 * 1024,
+  types: ["image/jpeg", "image/png", "image/webp"],
+} as const;
 
 export type MediaUpload = {
   id: number;

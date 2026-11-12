@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import type { ApiDeps, PKonekApi } from "./contract";
-import { ApiError, apiErrorFromResponse, networkError } from "./errors";
+import { apiErrorFromResponse, networkError } from "./errors";
 import type { ComplaintFilters, MediaType } from "./types";
 
 /**
@@ -56,13 +56,10 @@ export function createHttpApi(
       logout: async () => {
         await api.post("/auth/logout");
       },
-      registerCitizen: async () => {
-        // TODO(backend): POST /auth/register with a "citizen" role.
-        throw new ApiError({
-          status: 501,
-          kind: "not_implemented",
-          message: "Citizen accounts aren't available yet. You can still report an issue without an account.",
-        });
+      registerCitizen: async ({ email, password, full_name }) => {
+        // The backend returns the new user, not a token, so sign in right after.
+        await api.post("/auth/register", { email, password, full_name });
+        return (await api.post("/auth/login", { email, password })).data;
       },
     },
     categories: {

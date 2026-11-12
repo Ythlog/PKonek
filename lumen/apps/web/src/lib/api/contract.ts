@@ -33,7 +33,7 @@ export interface PKonekApi {
     login(email: string, password: string): Promise<TokenResponse>;
     me(): Promise<User>;
     logout(): Promise<void>;
-    /** Mock only. TODO(backend): POST /auth/register for citizens. */
+    /** POST /auth/register, then signs in so the caller gets a token. */
     registerCitizen(input: CitizenRegisterRequest): Promise<TokenResponse>;
   };
   categories: {
@@ -60,7 +60,7 @@ export interface PKonekApi {
     audit(params?: LogParams): Promise<Page<AuditLog>>;
   };
   media: {
-    /** media_backend POST /complaints/{id}/media. Staff only in the real backend. */
+    /** media_backend POST /complaints/{id}/media. Citizens: "initial" on their own complaint. Staff: "progress" or "other". */
     upload(complaintId: number, file: File, mediaType?: MediaType): Promise<MediaUpload>;
   };
 }

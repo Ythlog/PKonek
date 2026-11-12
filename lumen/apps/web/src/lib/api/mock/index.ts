@@ -372,12 +372,14 @@ export function createMockApi({
         run(() => {
           limiter.hit("create_complaint", 10);
           const viewer = optionalUser();
+          // Same order as the backend: request validation, pin, citizen login, category, duplicates.
           const errors: Record<string, string> = {};
           checkLength(errors, "title", input.title, 3, 150);
           checkLength(errors, "description", input.description, 5, 5000);
           if (!(input.category_id > 0)) errors.category_id = "Choose a category.";
           if (Object.keys(errors).length) invalid(errors);
           const { lat, lng } = validatePin(input.latitude, input.longitude);
+          if (!viewer || viewer.role !== "citizen") fail(401, "Citizen login is required to submit a complaint");
           activeCategory(input.category_id);
           const candidates = findDuplicates(input.category_id, lat, lng);
           if (candidates.length) {
@@ -574,12 +576,17 @@ export function createMockApi({
 
     media: {
       upload: async (complaintId, file, mediaType = "initial") => {
-        // TODO(backend): media_backend only accepts staff tokens; citizen uploads need an endpoint.
         const url = await readAsDataUrl(file);
         return run(() => {
-          optionalUser();
-          if (!["initial", "progress", "before", "after", "other"].includes(mediaType)) fail(422, "Unsupported media_type");
+          const actor = requireUser();
+          if (!["initial", "progress", "other"].includes(mediaType)) fail(422, "Unsupported media_type");
           const complaint = getComplaintRow(complaintId);
+          if (actor.role === "citizen") {
+            if (mediaType !== "initial") fail(403, "Citizens may upload complaint evidence only");
+            if (complaint.created_by_user_id !== actor.id) fail(403, "You can upload only to your own complaint");
+          } else if (mediaType === "initial") {
+            fail(403, "Staff uploads must be progress media");
+          }
           if (file.size === 0) fail(400, "The uploaded file is empty");
           if (file.size > 10 * 1024 * 1024) fail(413, "Maximum image size is 10 MB");
           if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) fail(415, "Only JPEG, PNG, and WebP images are accepted");

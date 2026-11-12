@@ -79,19 +79,19 @@ describe("HTTP API client", () => {
 
   it("uploads media as multipart form data", async () => {
     const { client, calls } = setup({ status: 201, data: { id: 1 } });
-    await client.media.upload(7, new File(["x"], "a.png", { type: "image/png" }), "after");
+    await client.media.upload(7, new File(["x"], "a.png", { type: "image/png" }), "progress");
     expect(calls[0].url).toBe("/complaints/7/media");
     const form = calls[0].data as FormData;
-    expect(form.get("media_type")).toBe("after");
+    expect(form.get("media_type")).toBe("progress");
     expect((form.get("file") as File).name).toBe("a.png");
   });
 
-  it("refuses citizen registration until the backend supports it", async () => {
-    const { client, calls } = setup({ status: 200 });
-    await expect(client.auth.registerCitizen({ full_name: "A", email: "a@b.ph", password: "12345678" })).rejects.toMatchObject({
-      status: 501,
-      kind: "not_implemented",
-    });
-    expect(calls).toHaveLength(0);
+  it("registers a citizen and then signs in, sending only the backend fields", async () => {
+    const { client, calls } = setup({ status: 200, data: { access_token: "t", role: "citizen" } }, null);
+    await expect(
+      client.auth.registerCitizen({ full_name: "A", email: "a@b.ph", password: "12345678", barangay: "Ugong", contact_number: "0917" }),
+    ).resolves.toMatchObject({ role: "citizen" });
+    expect(calls.map((c) => c.url)).toEqual(["/auth/register", "/auth/login"]);
+    expect(JSON.parse(calls[0].data)).toEqual({ email: "a@b.ph", password: "12345678", full_name: "A" });
   });
 });

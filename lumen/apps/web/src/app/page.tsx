@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Palette } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { DemoModePill } from "@/components/DemoModePill";
 
 // Temporary home page. Task 5 replaces it with the public landing page.
 export default function Home() {
@@ -8,7 +9,10 @@ export default function Home() {
     <main className="flex min-h-dvh flex-col">
       <section className="bg-brand-700 px-6 py-16 sm:py-24">
         <div className="mx-auto flex max-w-content flex-col gap-8">
-          <Logo size="lg" />
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Logo size="lg" />
+            <DemoModePill className="bg-accent text-ink" />
+          </div>
           <div className="max-w-2xl">
             <h1 className="text-3xl text-white sm:text-4xl">Report it. Track it. See it fixed.</h1>
             <p className="mt-4 text-lg text-brand-50">

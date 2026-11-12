@@ -1,0 +1,101 @@
+import axios, { AxiosError, type AxiosInstance } from "axios";
+import type { ApiDeps, PKonekApi } from "./contract";
+import { ApiError, apiErrorFromResponse, networkError } from "./errors";
+import type { ComplaintFilters, MediaType } from "./types";
+
+/**
+ * Axios client for the real backend. Requests go to same-origin /api and /media,
+ * and next.config.ts forwards them to accounts_complaints and media_backend.
+ */
+export function createHttpClient(deps: ApiDeps, baseURL = "/api"): AxiosInstance {
+  const client = axios.create({
+    baseURL,
+    timeout: 20_000,
+    headers: { Accept: "application/json" },
+    // FastAPI reads repeated keys for lists: ?status=open&status=in_progress
+    paramsSerializer: { indexes: null },
+  });
+
+  client.interceptors.request.use((config) => {
+    const token = deps.getToken();
+    if (token) config.headers.set("Authorization", `Bearer ${token}`);
+    return config;
+  });
+
+  client.interceptors.response.use(undefined, (error: unknown) => {
+    if (!(error instanceof AxiosError)) return Promise.reject(error);
+    if (!error.response) return Promise.reject(networkError(error));
+    const isLogin = error.config?.url === "/auth/login";
+    const sentToken = Boolean(error.config?.headers?.Authorization);
+    if (error.response.status === 401 && sentToken && !isLogin) deps.onUnauthorized?.();
+    return Promise.reject(apiErrorFromResponse(error.response.status, error.response.data, { endpoint: isLogin ? "login" : undefined }));
+  });
+
+  return client;
+}
+
+/** Drop undefined/empty values so they are not sent as "?q=". */
+function clean<T extends object>(params: T | undefined): Partial<T> | undefined {
+  if (!params) return undefined;
+  return Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)),
+  ) as Partial<T>;
+}
+
+export function createHttpApi(
+  deps: ApiDeps,
+  clients: { api?: AxiosInstance; media?: AxiosInstance } = {},
+): PKonekApi {
+  const api = clients.api ?? createHttpClient(deps, "/api");
+  const media = clients.media ?? createHttpClient(deps, "/media");
+
+  return {
+    auth: {
+      login: async (email, password) => (await api.post("/auth/login", { email, password })).data,
+      me: async () => (await api.get("/auth/me")).data,
+      logout: async () => {
+        await api.post("/auth/logout");
+      },
+      registerCitizen: async () => {
+        // TODO(backend): POST /auth/register with a "citizen" role.
+        throw new ApiError({
+          status: 501,
+          kind: "not_implemented",
+          message: "Citizen accounts aren't available yet. You can still report an issue without an account.",
+        });
+      },
+    },
+    categories: {
+      list: async (options) =>
+        (await api.get("/categories", { params: clean({ include_inactive: options?.includeInactive }) })).data,
+      create: async (input) => (await api.post("/categories", input)).data,
+      update: async (id, input) => (await api.patch(`/categories/${id}`, input)).data,
+    },
+    complaints: {
+      checkDuplicates: async (input) => (await api.post("/complaints/check-duplicates", input)).data,
+      create: async (input) => (await api.post("/complaints", input)).data,
+      list: async (filters?: ComplaintFilters) => (await api.get("/complaints", { params: clean(filters) })).data,
+      get: async (id) => (await api.get(`/complaints/${id}`)).data,
+      support: async (id, input) => (await api.post(`/complaints/${id}/support`, input)).data,
+      updateStatus: async (id, input) => (await api.patch(`/complaints/${id}/status`, input)).data,
+    },
+    users: {
+      list: async (params) => (await api.get("/users", { params: clean(params) })).data,
+      get: async (id) => (await api.get(`/users/${id}`)).data,
+      create: async (input) => (await api.post("/users", input)).data,
+      update: async (id, input) => (await api.patch(`/users/${id}`, input)).data,
+    },
+    logs: {
+      activity: async (params) => (await api.get("/logs/activity", { params: clean(params) })).data,
+      audit: async (params) => (await api.get("/logs/audit", { params: clean(params) })).data,
+    },
+    media: {
+      upload: async (complaintId, file, mediaType: MediaType = "initial") => {
+        const form = new FormData();
+        form.append("file", file);
+        form.append("media_type", mediaType);
+        return (await media.post(`/complaints/${complaintId}/media`, form)).data;
+      },
+    },
+  };
+}

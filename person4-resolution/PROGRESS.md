@@ -27,6 +27,9 @@
 - Implemented the authenticated complaint timeline endpoint, merging status history, responses, and SLA events in timestamp order.
 - Citizen timeline access is limited to their own complaint and public history/responses; officials and admins receive all event types and visibility.
 - Added MySQL integration tests covering visibility, ownership, merged item types, and ordering.
+- Implemented official claim, administrator department/official assignment, and category-based auto-assignment with lowest-priority selection.
+- Assignment writes, audit records, status history for claims, and ASSIGNED notifications share one transaction; officials are constrained by department or direct assignment.
+- Added MySQL integration coverage for claim/history/audit/notification, admin reassignment, access denial, routing priority, and unroutable complaints.
 
 ## Next
 

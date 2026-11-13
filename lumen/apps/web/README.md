@@ -27,6 +27,25 @@ Every demo account uses the password `Demo1234!`. The sign-in pages also list th
 
 Demo changes are saved in your browser. To start over, delete `pkonek.mock.v4` under DevTools → Application → Local Storage, then reload.
 
+## Map tiles
+
+The maps use Leaflet with CARTO Voyager tiles. CARTO requires an API key: without one, every tile shows an "API key required" watermark.
+
+1. Request a free key with your e-mail at https://carto.com/basemaps/apikey. It arrives by e-mail and works right away, with no account or card.
+2. In the CARTO dashboard, restrict the key to your sites, such as `localhost:3000` and your deployed domain, so nobody else can use up your quota.
+3. Add it to `.env.local`: `NEXT_PUBLIC_CARTO_BASEMAP_KEY=your-key`
+4. Restart `npm run dev`.
+
+Without a key, the app uses the standard OpenStreetMap tiles. They need no key, but OpenStreetMap only allows light use, so use the CARTO key for demos and deployments.
+
+| Plan | Limit | Price |
+|---|---|---|
+| Non-commercial | 5M tile requests a month | Free |
+| Commercial | 1M tile requests a month | Free |
+| Above that | Basemaps Commercial | From $500 a month |
+
+Either way, the map shows the required "© OpenStreetMap contributors, © CARTO" attribution. The settings are in `src/components/map/config.ts`.
+
 ## Use the real backend
 
 1. Start `lumen/modules/accounts_complaints` on port 8001. Start `media_backend` on port 8002 for photos.

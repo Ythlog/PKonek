@@ -6,7 +6,7 @@ function target(value: string | undefined, fallback: string): string {
 
 const nextConfig: NextConfig = {
   // Permit the current LAN address used to open the dev site on another device.
-  allowedDevOrigins: ["10.217.246.33"],
+  allowedDevOrigins: ["10.217.246.33", "192.168.110.36"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

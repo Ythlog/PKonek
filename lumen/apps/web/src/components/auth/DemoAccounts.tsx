@@ -32,15 +32,14 @@ export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccount
           <li key={a.email}>
             <button
               type="button"
-              onClick={() => onPick(a.email, DEMO_PASSWORD)}
-              disabled={!enabled}
-              className="flex min-h-touch w-full items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 text-left text-sm transition-colors enabled:hover:border-brand-600/40 enabled:hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => onPick(a.email, enabled ? DEMO_PASSWORD : "")}
+              className="flex min-h-touch w-full items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 text-left text-sm transition-colors hover:border-brand-600/40 hover:bg-brand-50"
             >
               <span className="min-w-0">
                 <span className="block font-semibold text-ink">{a.label}</span>
                 <span className="block truncate text-muted">{a.email}</span>
               </span>
-              <span className="shrink-0 font-semibold text-brand-600">Use</span>
+              <span className="shrink-0 font-semibold text-brand-600">{enabled ? "Use" : "Fill email"}</span>
             </button>
           </li>
         ))}

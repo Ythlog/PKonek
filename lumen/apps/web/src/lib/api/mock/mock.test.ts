@@ -266,6 +266,36 @@ describe("official updates and timeline", () => {
   });
 });
 
+describe("citizen verification", () => {
+  const streetlights = () => createSeed(NOW).complaints[1]; // the demo resident's resolved report
+
+  it("lets only the original reporter confirm a resolved fix, once", async () => {
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.verify(2, { verdict: "confirmed" }))).status).toBe(403);
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(5, { verdict: "confirmed" }))).status).toBe(403);
+    expect(streetlights().status).toBe("resolved");
+    const v = await api.complaints.verify(2, { verdict: "confirmed", note: "Bright again, thanks!" });
+    expect(v).toMatchObject({ complaint_id: 2, verdict: "confirmed", note: "Bright again, thanks!" });
+    expect((await rejection(api.complaints.verify(2, { verdict: "confirmed" }))).status).toBe(409);
+    expect((await api.complaints.myVerifications())[0].id).toBe(v.id);
+    expect((await api.complaints.timeline(2))[0]).toMatchObject({ type: "verified", detail: "Bright again, thanks!" });
+  });
+
+  it("reopens a fix that didn't hold, with a reason", async () => {
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(2, { verdict: "rejected" }))).fieldErrors).toHaveProperty("note");
+    await api.complaints.verify(2, { verdict: "rejected", note: "Two lights are still out." });
+    expect(await api.complaints.get(2)).toMatchObject({ status: "open", resolved_at: null });
+    expect((await api.complaints.timeline(2))[0]).toMatchObject({ type: "reopened", detail: "Two lights are still out." });
+  });
+
+  it("refuses verification on reports that aren't resolved", async () => {
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(1, { verdict: "confirmed" }))).message).toBe("Complaint is not awaiting verification");
+  });
+});
+
 describe("admin routes", () => {
   it("are admin only", async () => {
     await signIn("official@pkonek.demo");

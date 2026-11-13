@@ -1,23 +1,25 @@
 import Link from "next/link";
 import { ChevronRight, HandHeart, MapPin } from "lucide-react";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { StatusBadge, type DisplayStatus } from "@/components/ui/StatusBadge";
 import type { Complaint } from "@/lib/api/types";
 import { timeAgo } from "@/lib/format";
 
 type ComplaintListItemProps = {
   complaint: Complaint;
+  /** Overrides the badge, e.g. "Awaiting verification" for residents. */
+  status?: DisplayStatus;
   categoryName?: string;
   href?: string;
   now?: number;
 };
 
 /** One complaint in a list: status, title, place, category, Me Too count and age. */
-export function ComplaintListItem({ complaint, categoryName, href, now }: ComplaintListItemProps) {
+export function ComplaintListItem({ complaint, status, categoryName, href, now }: ComplaintListItemProps) {
   const body = (
     <>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <StatusBadge status={complaint.status} size="sm" />
+          <StatusBadge status={status ?? complaint.status} size="sm" />
           <span className="font-mono text-xs text-muted tabular">{complaint.reference_no}</span>
         </div>
         <p className="mt-1.5 font-semibold leading-snug text-ink">{complaint.title}</p>

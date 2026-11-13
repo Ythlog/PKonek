@@ -10,6 +10,7 @@ export const queryKeys = {
   complaints: (filters: ComplaintFilters = {}) => ["complaints", filters] as const,
   complaint: (id: number) => ["complaint", id] as const,
   timeline: (id: number) => ["timeline", id] as const,
+  verifications: ["verifications"] as const,
 };
 
 export function useCategories() {
@@ -39,6 +40,14 @@ export function useTimeline(id: number | null) {
     queryKey: queryKeys.timeline(id ?? 0),
     queryFn: () => complaintService.timeline(id!),
     enabled: id !== null,
+  });
+}
+
+export function useMyVerifications(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.verifications,
+    queryFn: () => complaintService.myVerifications(),
+    enabled,
   });
 }
 

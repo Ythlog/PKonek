@@ -235,7 +235,7 @@ export type ComplaintUpdate = {
   created_at: string;
 };
 
-export type TimelineItemType = "created" | "status_change" | "support" | "response" | "media" | "resolved";
+export type TimelineItemType = "created" | "status_change" | "support" | "response" | "media" | "resolved" | "verified" | "reopened";
 
 export type TimelineItem = {
   type: TimelineItemType;
@@ -247,6 +247,19 @@ export type TimelineItem = {
   actor_name?: string | null;
   is_public?: boolean;
   media_url?: string | null;
+};
+
+// ---------- Citizen verification ----------
+/** Same shape as person4 VerificationCreate / VerificationResult. */
+export type VerificationVerdict = "confirmed" | "rejected";
+export type VerificationCreate = { verdict: VerificationVerdict; note?: string | null };
+export type Verification = {
+  id: number;
+  complaint_id: number;
+  citizen_id: number;
+  verdict: VerificationVerdict;
+  note: string | null;
+  created_at: string;
 };
 
 // ---------- Media (media_backend) ----------

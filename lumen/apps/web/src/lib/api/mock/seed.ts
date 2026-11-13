@@ -1,5 +1,5 @@
 import { PASIG_BARANGAYS } from "@/lib/pasig";
-import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, ComplaintUpdate, Role, User } from "../types";
+import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, ComplaintUpdate, Role, User, Verification } from "../types";
 
 /** Demo accounts. Shown on the login screens while mock mode is on. */
 export const DEMO_PASSWORD = "Demo1234!";
@@ -25,13 +25,14 @@ export type MockSupport = {
 export type MockMedia = { id: number; complaint_id: number; uploaded_by: number; media_type: string; url: string; created_at: string };
 
 export type MockDb = {
-  version: 2;
+  version: 3;
   users: MockUser[];
   categories: Category[];
   complaints: ComplaintStaff[];
   supports: MockSupport[];
   updates: ComplaintUpdate[];
   media: MockMedia[];
+  verifications: Verification[];
   activity: ActivityLog[];
   audit: AuditLog[];
 };
@@ -171,6 +172,19 @@ function seedUpdates(complaints: ComplaintStaff[], now: number): ComplaintUpdate
   return updates;
 }
 
+/** The demo resident already confirmed one older fix; their newest resolved report still awaits confirmation. */
+function seedVerifications(complaints: ComplaintStaff[]): Verification[] {
+  const resolvedByCitizen = complaints.filter((c) => c.created_by_user_id === 5 && c.status === "resolved" && c.resolved_at);
+  return resolvedByCitizen.slice(1).map((c, i) => ({
+    id: i + 1,
+    complaint_id: c.id,
+    citizen_id: 5,
+    verdict: "confirmed" as const,
+    note: null,
+    created_at: c.resolved_at!,
+  }));
+}
+
 export function createSeed(now = Date.now()): MockDb {
   const hour = 3_600_000;
   const year = new Date(now).getFullYear();
@@ -228,5 +242,5 @@ export function createSeed(now = Date.now()): MockDb {
     .filter((u) => u.last_login_at)
     .map((u, i) => ({ id: i + 1, user_id: u.id, email: u.email, action: "login_success", ip_address: "127.0.0.1", user_agent: "Demo browser", details: null, created_at: u.last_login_at! }));
 
-  return { version: 2, users, categories, complaints, supports: [], updates: seedUpdates(complaints, now), media: [], activity, audit };
+  return { version: 3, users, categories, complaints, supports: [], updates: seedUpdates(complaints, now), media: [], verifications: seedVerifications(complaints), activity, audit };
 }

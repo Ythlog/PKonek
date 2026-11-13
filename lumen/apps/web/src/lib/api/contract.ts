@@ -21,6 +21,8 @@ import type {
   SupportCreate,
   TimelineItem,
   TokenResponse,
+  Verification,
+  VerificationCreate,
   User,
   UserCreate,
   UserListParams,
@@ -55,7 +57,13 @@ export interface PKonekApi {
     timeline(id: number): Promise<TimelineItem[]>;
     /** Official update on a complaint. Staff only. */
     postUpdate(id: number, input: ComplaintUpdateCreate): Promise<ComplaintUpdate>;
+    /** The original reporter confirms the fix, or reopens the complaint. */
+    verify(id: number, input: VerificationCreate): Promise<Verification>;
+    /** The signed-in citizen's verifications, newest first. */
+    myVerifications(): Promise<Verification[]>;
   };
+  /** Features that only work in some environments, so screens can hide them. */
+  capabilities: { verification: boolean };
   users: {
     list(params?: UserListParams): Promise<Page<User>>;
     get(id: number): Promise<User>;

@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { loginPathFor } from "@/lib/auth/routes";
 import { Forbidden } from "./Forbidden";
 
-function FullPageStatus({ label }: { label: string }) {
+export function FullPageStatus({ label }: { label: string }) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-page">
       <Logo variant="badge" size="sm" />

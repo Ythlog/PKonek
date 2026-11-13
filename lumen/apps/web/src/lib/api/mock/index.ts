@@ -12,6 +12,7 @@ import {
   type ComplaintUpdate,
   type Page,
   type TimelineItem,
+  type Verification,
   type Role,
   type User,
 } from "../types";
@@ -104,6 +105,12 @@ function publicComplaint(c: ComplaintStaff): Complaint {
     updated_at: c.updated_at,
     resolved_at: c.resolved_at,
   };
+}
+
+/** Resolved, and the reporter hasn't confirmed or reopened it since. */
+function awaitingVerification(c: ComplaintStaff, verifications: Verification[]) {
+  if (c.status !== "resolved" || !c.resolved_at) return false;
+  return !verifications.some((v) => v.complaint_id === c.id && v.created_at >= c.resolved_at!);
 }
 
 function dateKey(value: string) {
@@ -479,6 +486,13 @@ export function createMockApi({
             const note = (a.after_data?.note as string | null | undefined) ?? null;
             items.push({ type: to === "resolved" ? "resolved" : "status_change", timestamp: a.created_at, display_text: "Status changed", status: to, detail: note, actor_name: nameOf(a.actor_user_id) });
           }
+          for (const v of d.verifications.filter((v) => v.complaint_id === id)) {
+            items.push(
+              v.verdict === "confirmed"
+                ? { type: "verified", timestamp: v.created_at, display_text: "Fix confirmed by the resident", detail: v.note }
+                : { type: "reopened", timestamp: v.created_at, display_text: "Reopened by the resident", detail: v.note },
+            );
+          }
           for (const u of d.updates.filter((u) => u.complaint_id === id && (u.is_public || staff))) {
             items.push({ type: "response", timestamp: u.created_at, display_text: u.is_public ? "Update from the barangay" : "Internal note", detail: u.body, actor_name: u.author_name, is_public: u.is_public });
           }
@@ -498,6 +512,35 @@ export function createMockApi({
           logAudit({ actor_user_id: actor.id, entity_type: "complaint_response", entity_id: update.id, action: "response_created", before_data: null, after_data: { complaint_id: id, body, is_public: input.is_public } });
           commit();
           return update;
+        }),
+      verify: (id, input) =>
+        run(() => {
+          const viewer = requireRole("citizen");
+          const complaint = getComplaintRow(id);
+          if (complaint.created_by_user_id !== viewer.id) fail(403, "Only the original citizen may verify this complaint");
+          if (!["confirmed", "rejected"].includes(input.verdict)) fail(422, "Unsupported verification verdict");
+          const d = load();
+          if (!awaitingVerification(complaint, d.verifications)) fail(409, "Complaint is not awaiting verification");
+          const note = input.note?.trim() || null;
+          if (input.verdict === "rejected" && !note) invalid({ note: "Tell the barangay what is still wrong." });
+          const verification = { id: nextId(d.verifications), complaint_id: id, citizen_id: viewer.id, verdict: input.verdict, note, created_at: stamp() };
+          d.verifications.push(verification);
+          if (input.verdict === "rejected") {
+            // Reopened: back to the officials' queue.
+            complaint.status = "open";
+            complaint.resolved_at = null;
+          }
+          complaint.updated_at = stamp();
+          logAudit({ actor_user_id: viewer.id, entity_type: "complaint", entity_id: id, action: input.verdict === "confirmed" ? "verification_confirmed" : "reopened", before_data: { status: "resolved" }, after_data: { status: complaint.status, note } });
+          commit();
+          return verification;
+        }),
+      myVerifications: () =>
+        run(() => {
+          const viewer = requireUser();
+          return load()
+            .verifications.filter((v) => v.citizen_id === viewer.id)
+            .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
         }),
       updateStatus: (id, input) =>
         run(() => {
@@ -617,6 +660,8 @@ export function createMockApi({
           return page(rows, params.page, params.page_size);
         }),
     },
+
+    capabilities: { verification: true },
 
     media: {
       upload: async (complaintId, file, mediaType = "initial") => {

@@ -91,7 +91,13 @@ export function createHttpApi(
         // TODO(backend): POST /api/complaints/{id}/responses {body, is_public} once person4 shares the schema.
         throw new ApiError({ status: 501, kind: "not_implemented", message: "Official updates aren't connected to the server yet." });
       },
+      verify: async () => {
+        // TODO(backend): POST /api/complaints/{id}/verification {verdict, note} once person4 shares the schema.
+        throw new ApiError({ status: 501, kind: "not_implemented", message: "Confirming fixes isn't connected to the server yet." });
+      },
+      myVerifications: async () => [],
     },
+    capabilities: { verification: false },
     users: {
       list: async (params) => (await api.get("/users", { params: clean(params) })).data,
       get: async (id) => (await api.get(`/users/${id}`)).data,

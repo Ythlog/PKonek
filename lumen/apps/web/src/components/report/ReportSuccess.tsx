@@ -68,8 +68,8 @@ export function ReportSuccess({ outcome, onReportAnother }: { outcome: ReportOut
         )}
 
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/app/reports" className={buttonClasses()}>
-            Go to my reports
+          <Link href={`/app/reports/${complaint.id}`} className={buttonClasses()}>
+            {supported ? "View the report" : "Track this report"}
           </Link>
           <Button variant="secondary" onClick={onReportAnother}>
             Report another issue

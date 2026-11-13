@@ -1,4 +1,4 @@
-import { CircleCheck, CircleDot, HandHeart, Image as ImageIcon, Lock, Megaphone, MessageSquareText, type LucideIcon } from "lucide-react";
+import { BadgeCheck, CircleCheck, CircleDot, HandHeart, Image as ImageIcon, Lock, Megaphone, MessageSquareText, RotateCcw, type LucideIcon } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { TimelineItem, TimelineItemType } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -11,6 +11,8 @@ const icons: Record<TimelineItemType, { icon: LucideIcon; tone: string }> = {
   support: { icon: HandHeart, tone: "bg-accent/20 text-ink" },
   response: { icon: MessageSquareText, tone: "bg-info-bg text-info" },
   media: { icon: ImageIcon, tone: "bg-cream text-ink" },
+  verified: { icon: BadgeCheck, tone: "bg-success-bg text-success" },
+  reopened: { icon: RotateCcw, tone: "bg-status-reopened-bg text-status-reopened" },
 };
 
 /** Newest-first history of a complaint. Used by residents and staff. */

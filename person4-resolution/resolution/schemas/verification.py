@@ -1,9 +1,12 @@
 """Citizen verification request/response schemas."""
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VerificationCreate(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [
+        {"verdict": "confirmed", "note": "Fixed, thanks"}]})
+
     verdict: str = Field(pattern="^(confirmed|rejected)$")
     note: str | None = None
     evidence_media_id: int | None = Field(default=None, gt=0)

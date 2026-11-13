@@ -1,0 +1,394 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import type { PKonekApi } from "../contract";
+import { ApiError } from "../errors";
+import { BARANGAY_NAMES } from "@/lib/pasig";
+import { createMockApi } from "./index";
+import { memoryPersistence } from "./persistence";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD, createSeed } from "./seed";
+
+const NOW = Date.parse("2026-11-13T04:00:00Z");
+
+let token: string | null;
+let api: PKonekApi;
+let clock: number;
+
+beforeEach(() => {
+  token = null;
+  clock = NOW;
+  api = createMockApi({
+    deps: { getToken: () => token },
+    persistence: memoryPersistence(),
+    delayMs: 0,
+    now: () => clock,
+  });
+});
+
+async function signIn(email: string) {
+  const res = await api.auth.login(email, DEMO_PASSWORD);
+  token = res.access_token;
+  return res;
+}
+
+async function rejection(promise: Promise<unknown>): Promise<ApiError> {
+  const error = await promise.then(
+    () => {
+      throw new Error("expected the call to fail");
+    },
+    (e: unknown) => e,
+  );
+  expect(error).toBeInstanceOf(ApiError);
+  return error as ApiError;
+}
+
+const kapitolyoDrain = () => createSeed(NOW).complaints[0];
+
+describe("seed data", () => {
+  it("has about 30 complaints in Pasig using all 9 backend categories", () => {
+    const seed = createSeed(NOW);
+    expect(seed.complaints.length).toBeGreaterThanOrEqual(28);
+    expect(seed.categories.map((c) => c.code)).toEqual([
+      "roads", "flooding_drainage", "garbage", "streetlights", "illegal_parking", "noise", "water_supply", "stray_animals", "others",
+    ]);
+    expect(new Set(seed.complaints.map((c) => c.category_id)).size).toBe(9);
+    for (const c of seed.complaints) {
+      expect(c.latitude).toBeGreaterThanOrEqual(14.53);
+      expect(c.latitude).toBeLessThanOrEqual(14.62);
+      expect(c.longitude).toBeGreaterThanOrEqual(121.05);
+      expect(c.longitude).toBeLessThanOrEqual(121.11);
+      expect(BARANGAY_NAMES).toContain(c.barangay);
+      expect(c.reference_no).toMatch(/^PSG-\d{4}-\d{6}$/);
+    }
+  });
+});
+
+describe("auth", () => {
+  it.each(DEMO_ACCOUNTS.map((a) => [a.email, a.role]))("signs in %s as %s", async (email, role) => {
+    const res = await signIn(email);
+    expect(res.role).toBe(role);
+    expect(res.token_type).toBe("bearer");
+    expect(res.expires_in).toBe(3600);
+    await expect(api.auth.me()).resolves.toMatchObject({ email, role });
+  });
+
+  it("rejects a wrong password with the login message", async () => {
+    const err = await rejection(api.auth.login("official@pkonek.demo", "wrong"));
+    expect(err.status).toBe(401);
+    expect(err.message).toBe("Incorrect email or password.");
+  });
+
+  it("rate-limits logins at 10 per minute", async () => {
+    for (let i = 0; i < 10; i++) await api.auth.login("x@pkonek.demo", "bad").catch(() => {});
+    const err = await rejection(api.auth.login("official@pkonek.demo", DEMO_PASSWORD));
+    expect(err.status).toBe(429);
+    clock += 61_000;
+    await expect(api.auth.login("official@pkonek.demo", DEMO_PASSWORD)).resolves.toBeTruthy();
+  });
+
+  it("expires tokens after expires_in", async () => {
+    await signIn("official@pkonek.demo");
+    clock += 3601_000;
+    expect((await rejection(api.auth.me())).status).toBe(401);
+  });
+
+  it("registers a citizen, then refuses the same email", async () => {
+    const res = await api.auth.registerCitizen({ full_name: "Maria Clara", email: "Maria@Example.com", password: "longenough", barangay: "Ugong" });
+    expect(res.role).toBe("citizen");
+    token = res.access_token;
+    await expect(api.auth.me()).resolves.toMatchObject({ email: "maria@example.com", barangay: "Ugong" });
+    const err = await rejection(api.auth.registerCitizen({ full_name: "M", email: "maria@example.com", password: "longenough" }));
+    expect(err.status).toBe(409);
+  });
+
+  it("validates registration fields", async () => {
+    const err = await rejection(api.auth.registerCitizen({ full_name: "", email: "nope", password: "short" }));
+    expect(err.status).toBe(422);
+    expect(Object.keys(err.fieldErrors).sort()).toEqual(["email", "full_name", "password"]);
+  });
+});
+
+describe("complaints", () => {
+  const near = (dLat = 0) => ({ latitude: kapitolyoDrain().latitude + dLat, longitude: kapitolyoDrain().longitude });
+
+  it("finds the open drain report next to a new flooding pin", async () => {
+    const res = await api.complaints.checkDuplicates({ category_id: 2, ...near(0.0001) });
+    expect(res.is_duplicate).toBe(true);
+    expect(res.candidates[0]).toMatchObject({ id: 1, reference_no: kapitolyoDrain().reference_no });
+    expect(res.candidates[0].distance_m).toBeLessThan(50);
+  });
+
+  it("returns 409 with candidates when filing a duplicate", async () => {
+    await signIn("citizen@pkonek.demo");
+    const err = await rejection(api.complaints.create({ category_id: 2, title: "Flooding here", description: "Water everywhere", ...near(0.0001) }));
+    expect(err.kind).toBe("duplicate");
+    expect(err.duplicate?.candidates[0].id).toBe(1);
+  });
+
+  it("rejects a pin outside Pasig with the backend message", async () => {
+    const err = await rejection(api.complaints.create({ category_id: 1, title: "Pothole", description: "Deep pothole", latitude: 14.65, longitude: 121.03 }));
+    expect(err.status).toBe(422);
+    expect(err.message).toBe("The pinned location is outside Pasig City. Please move the pin.");
+  });
+
+  it("returns field errors for short text", async () => {
+    const err = await rejection(api.complaints.create({ category_id: 1, title: "x", description: "y", ...near() }));
+    expect(err.fieldErrors).toMatchObject({ title: expect.stringMatching(/at least 3/), description: expect.stringMatching(/at least 5/) });
+  });
+
+  it("requires a citizen login to file a complaint, like the backend", async () => {
+    const input = { category_id: 1, title: "Pothole on Julia Vargas", description: "Deep pothole in the middle lane", latitude: 14.5865, longitude: 121.0615 };
+    expect((await rejection(api.complaints.create(input))).message).toMatch(/session has ended|sign in/i);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.create(input))).status).toBe(401);
+    await signIn("citizen@pkonek.demo");
+    const created = await api.complaints.create(input);
+    expect(created).toMatchObject({ status: "open", report_count: 1, reference_no: "PSG-2026-000031" });
+    expect(created).not.toHaveProperty("reporter_contact");
+  });
+
+  it("lets citizens upload evidence to their own complaints only", async () => {
+    await signIn("citizen@pkonek.demo");
+    const photo = new File([new Uint8Array(10)], "drain.jpg", { type: "image/jpeg" });
+    await expect(api.media.upload(1, photo, "initial")).resolves.toMatchObject({ complaintId: 1, mediaType: "initial" });
+    expect((await rejection(api.media.upload(5, photo, "initial"))).status).toBe(403);
+    expect((await rejection(api.media.upload(1, photo, "progress"))).status).toBe(403);
+    const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "big.jpg", { type: "image/jpeg" });
+    expect((await rejection(api.media.upload(1, big, "initial"))).status).toBe(413);
+  });
+
+  it("links a citizen's report to their account and lists it under mine", async () => {
+    await signIn("citizen@pkonek.demo");
+    const created = await api.complaints.create({ category_id: 4, title: "Dark alley", description: "No lights at all", latitude: 14.6, longitude: 121.1 });
+    const mine = await api.complaints.list({ mine: true, page_size: 100 });
+    expect(mine.items.map((c) => c.id)).toContain(created.id);
+    expect(mine.items.every((c) => !("reporter_contact" in c))).toBe(true);
+    expect((await rejection(api.complaints.list())).status).toBe(403);
+  });
+
+  it("adds a Me Too support once per contact and only within 50 m", async () => {
+    const before = kapitolyoDrain().report_count;
+    const supported = await api.complaints.support(1, { ...near(0.0001), reporter_contact: "0999" });
+    expect(supported.report_count).toBe(before + 1);
+    expect((await rejection(api.complaints.support(1, { ...near(0.0001), reporter_contact: "0999" }))).status).toBe(409);
+    const far = await rejection(api.complaints.support(1, { ...near(0.002) }));
+    expect(far.status).toBe(422);
+    expect(far.message).toMatch(/supports must be within 50 m/);
+  });
+
+  it("refuses support on a closed complaint", async () => {
+    const resolved = createSeed(NOW).complaints.find((c) => c.status === "resolved")!;
+    const err = await rejection(api.complaints.support(resolved.id, { latitude: resolved.latitude, longitude: resolved.longitude }));
+    expect(err.message).toBe("This complaint is already closed. File a new report instead.");
+  });
+
+  it("requires staff to list, and filters by status, barangay and text", async () => {
+    expect((await rejection(api.complaints.list())).status).toBe(401);
+    await signIn("official@pkonek.demo");
+    const all = await api.complaints.list({ page_size: 100 });
+    expect(all.total).toBe(createSeed(NOW).complaints.length);
+    expect(all.items[0]).toHaveProperty("reporter_contact");
+
+    const open = await api.complaints.list({ status: ["open"], barangay: "Kapitolyo", page_size: 100 });
+    expect(open.items.length).toBeGreaterThan(0);
+    expect(open.items.every((c) => c.status === "open" && c.barangay === "Kapitolyo")).toBe(true);
+
+    const text = await api.complaints.list({ q: "streetlight" });
+    expect(text.items.length).toBeGreaterThan(0);
+
+    const byCount = await api.complaints.list({ sort: "report_count", order: "desc", page_size: 3 });
+    expect(byCount.items[0].report_count).toBeGreaterThanOrEqual(byCount.items[1].report_count);
+    expect(byCount.page_size).toBe(3);
+  });
+
+  it("follows the allowed status transitions", async () => {
+    await signIn("official@pkonek.demo");
+    const resolved = await api.complaints.updateStatus(1, { status: "resolved", note: "Declogged" });
+    expect(resolved.status).toBe("resolved");
+    expect(resolved.resolved_at).not.toBeNull();
+    const err = await rejection(api.complaints.updateStatus(1, { status: "open" }));
+    expect(err.status).toBe(400);
+    expect(err.message).toBe("Cannot change status from 'resolved' to 'open'.");
+  });
+
+  it("does not let citizens change status", async () => {
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.updateStatus(3, { status: "in_progress" }))).status).toBe(403);
+  });
+
+  it("persists changes in storage", async () => {
+    const persistence = memoryPersistence();
+    const first = createMockApi({ deps: { getToken: () => null }, persistence, delayMs: 0, now: () => clock });
+    await first.complaints.support(1, { ...near(0.0001), reporter_contact: "a" });
+    const second = createMockApi({ deps: { getToken: () => null }, persistence, delayMs: 0, now: () => clock });
+    expect((await second.complaints.get(1)).report_count).toBe(kapitolyoDrain().report_count + 1);
+  });
+});
+
+describe("official updates and timeline", () => {
+  it("seeds public updates on complaints that moved past open", () => {
+    const seed = createSeed(NOW);
+    const progressed = seed.complaints.filter((c) => c.status !== "open").map((c) => c.id);
+    expect(new Set(seed.updates.map((u) => u.complaint_id))).toEqual(new Set(progressed));
+  });
+
+  it("lets staff post public updates and internal notes", async () => {
+    expect((await rejection(api.complaints.postUpdate(3, { body: "Hi", is_public: true }))).status).toBe(401);
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.postUpdate(3, { body: "Hi", is_public: true }))).status).toBe(403);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.postUpdate(3, { body: "  ", is_public: true }))).fieldErrors).toHaveProperty("body");
+    const update = await api.complaints.postUpdate(3, { body: "Truck scheduled for Saturday.", is_public: true });
+    expect(update).toMatchObject({ complaint_id: 3, author_name: "Ramon Aquino", is_public: true });
+    await api.complaints.postUpdate(3, { body: "Call the hauler first.", is_public: false });
+  });
+
+  it("shows the timeline newest first and hides internal notes from residents", async () => {
+    await signIn("official@pkonek.demo");
+    await api.complaints.postUpdate(3, { body: "Internal only", is_public: false });
+    clock += 60_000;
+    await api.complaints.updateStatus(3, { status: "in_progress", note: "Crew assigned" });
+    clock += 60_000;
+    await api.complaints.postUpdate(3, { body: "Crew is on the way.", is_public: true });
+
+    const staffView = await api.complaints.timeline(3);
+    expect(staffView.map((i) => i.type)).toEqual(["response", "status_change", "response", "created"]);
+    expect(staffView[1]).toMatchObject({ status: "in_progress", detail: "Crew assigned", actor_name: "Ramon Aquino" });
+
+    token = null;
+    const publicView = await api.complaints.timeline(3);
+    expect(publicView.map((i) => i.detail)).not.toContain("Internal only");
+    expect(publicView.find((i) => i.type === "created")?.actor_name).toBeNull();
+  });
+
+  it("adds staff progress photos to the timeline", async () => {
+    await signIn("official@pkonek.demo");
+    await api.media.upload(3, new File([new Uint8Array(8)], "p.jpg", { type: "image/jpeg" }), "progress");
+    expect((await api.complaints.timeline(3))[0]).toMatchObject({ type: "media", display_text: expect.stringMatching(/progress photo/i) });
+  });
+});
+
+describe("citizen verification", () => {
+  const streetlights = () => createSeed(NOW).complaints[1]; // the demo resident's resolved report
+
+  it("lets only the original reporter confirm a resolved fix, once", async () => {
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.complaints.verify(2, { verdict: "confirmed" }))).status).toBe(403);
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(5, { verdict: "confirmed" }))).status).toBe(403);
+    expect(streetlights().status).toBe("resolved");
+    const v = await api.complaints.verify(2, { verdict: "confirmed", note: "Bright again, thanks!" });
+    expect(v).toMatchObject({ complaint_id: 2, verdict: "confirmed", note: "Bright again, thanks!" });
+    expect((await rejection(api.complaints.verify(2, { verdict: "confirmed" }))).status).toBe(409);
+    expect((await api.complaints.myVerifications())[0].id).toBe(v.id);
+    expect((await api.complaints.timeline(2))[0]).toMatchObject({ type: "verified", detail: "Bright again, thanks!" });
+  });
+
+  it("reopens a fix that didn't hold, with a reason", async () => {
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(2, { verdict: "rejected" }))).fieldErrors).toHaveProperty("note");
+    await api.complaints.verify(2, { verdict: "rejected", note: "Two lights are still out." });
+    expect(await api.complaints.get(2)).toMatchObject({ status: "open", resolved_at: null });
+    expect((await api.complaints.timeline(2))[0]).toMatchObject({ type: "reopened", detail: "Two lights are still out." });
+  });
+
+  it("refuses verification on reports that aren't resolved", async () => {
+    await signIn("citizen@pkonek.demo");
+    expect((await rejection(api.complaints.verify(1, { verdict: "confirmed" }))).message).toBe("Complaint is not awaiting verification");
+  });
+});
+
+describe("notifications", () => {
+  it("seeds an inbox for each demo account", async () => {
+    for (const email of ["citizen@pkonek.demo", "official@pkonek.demo", "admin@pkonek.demo"]) {
+      await signIn(email);
+      expect((await api.notifications.list()).total).toBeGreaterThan(0);
+      expect(await api.notifications.unreadCount()).toBeGreaterThan(0);
+    }
+  });
+
+  it("tells the reporter about status changes and updates, and officials about new reports", async () => {
+    await signIn("citizen@pkonek.demo");
+    const before = await api.notifications.unreadCount();
+    const created = await api.complaints.create({ category_id: 4, title: "Dark alley", description: "No lights at all", latitude: 14.5735, longitude: 121.0612, barangay: "Kapitolyo" });
+
+    await signIn("official@pkonek.demo");
+    expect((await api.notifications.list({ unread: true })).items[0]).toMatchObject({ notification_type: "NEW_COMPLAINT", complaint_id: created.id });
+    await api.complaints.updateStatus(created.id, { status: "resolved" });
+    await api.complaints.postUpdate(created.id, { body: "Fixed the bulbs.", is_public: true });
+    await api.complaints.postUpdate(created.id, { body: "internal", is_public: false });
+
+    await signIn("citizen@pkonek.demo");
+    const inbox = await api.notifications.list({ unread: true });
+    expect(await api.notifications.unreadCount()).toBe(before + 2);
+    expect(inbox.items.slice(0, 2).map((n) => n.notification_type)).toEqual(["OFFICIAL_RESPONSE", "VERIFICATION_REQUESTED"]);
+  });
+
+  it("marks one or all as read, and only for the owner", async () => {
+    await signIn("citizen@pkonek.demo");
+    const [first] = (await api.notifications.list({ unread: true })).items;
+    await api.notifications.markRead(first.id);
+    expect((await api.notifications.list({ unread: true })).items.map((n) => n.id)).not.toContain(first.id);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.notifications.markRead(first.id))).status).toBe(404);
+    await api.notifications.markAllRead();
+    expect(await api.notifications.unreadCount()).toBe(0);
+  });
+});
+
+describe("public data", () => {
+  it("serves map points without reporter details, to anyone", async () => {
+    const points = await api.map.points({ status: ["open"] });
+    expect(points.length).toBe(createSeed(NOW).complaints.filter((c) => c.status === "open").length);
+    expect(points[0]).not.toHaveProperty("reporter_contact");
+  });
+
+  it("builds the accountability summary from aggregates only", async () => {
+    const s = await api.publicReport.summary();
+    expect(s.total).toBe(createSeed(NOW).complaints.length);
+    expect(s.by_barangay.reduce((sum, b) => sum + b.total, 0)).toBe(s.total);
+    expect(s.recently_resolved[0].hours_to_resolve).toBeGreaterThan(0);
+    expect(JSON.stringify(s)).not.toMatch(/@|reporter/);
+  });
+});
+
+describe("admin routes", () => {
+  it("are admin only", async () => {
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.users.list())).status).toBe(403);
+    expect((await rejection(api.logs.audit())).status).toBe(403);
+  });
+
+  it("list staff accounts only and create new officials", async () => {
+    await signIn("admin@pkonek.demo");
+    const users = await api.users.list();
+    expect(users.items.every((u) => u.role !== "citizen")).toBe(true);
+    const created = await api.users.create({ email: "new@pasig.gov.ph", password: "password1", full_name: "New Official", barangay: "Ugong" });
+    expect(created).toMatchObject({ role: "official", is_active: true });
+    expect(created).not.toHaveProperty("password");
+    expect((await rejection(api.users.create({ email: "new@pasig.gov.ph", password: "password1", full_name: "Dup" }))).message).toBe("Email already registered");
+  });
+
+  it("stop an admin from deactivating themselves", async () => {
+    const { access_token } = await signIn("admin@pkonek.demo");
+    const adminId = Number(access_token.split(".")[1]);
+    const err = await rejection(api.users.update(adminId, { is_active: false }));
+    expect(err.message).toBe("You cannot demote or deactivate yourself");
+  });
+
+  it("record logins and status changes in the logs", async () => {
+    await signIn("admin@pkonek.demo");
+    await api.complaints.updateStatus(3, { status: "in_progress" });
+    const activity = await api.logs.activity({ action: "login_success" });
+    expect(activity.items[0].email).toBe("admin@pkonek.demo");
+    const audit = await api.logs.audit({ entity_type: "complaint", entity_id: 3 });
+    expect(audit.items[0]).toMatchObject({ action: "status_change", after_data: { status: "in_progress" } });
+  });
+
+  it("manage categories and hide inactive ones from the public", async () => {
+    await signIn("admin@pkonek.demo");
+    await api.categories.update(6, { is_active: false });
+    token = null;
+    const publicList = await api.categories.list({ includeInactive: true });
+    expect(publicList.map((c) => c.id)).not.toContain(6);
+    expect(publicList[0].name <= publicList[1].name).toBe(true);
+  });
+});

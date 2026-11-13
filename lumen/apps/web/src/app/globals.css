@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * PKonek design tokens. This is the only place raw values live.
+ * Default Tailwind palettes, radii, shadows and type sizes are cleared so
+ * components can only use these tokens. Keep src/lib/design-tokens.ts in sync.
+ */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Brand: deep teal */
+  --color-brand-700: #0f4c5c;
+  --color-brand-600: #136a72;
+  --color-brand-50: #e8f4f3;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Surfaces: warm neutrals from the logo cream */
+  --color-cream: #f3eadf;
+  --color-page: #faf7f2;
+  --color-surface: #ffffff;
+  --color-border: #e7e1d8;
+
+  /* Text */
+  --color-ink: #1c2321;
+  --color-muted: #5b6461;
+
+  /* Accent: marigold, always with dark text */
+  --color-accent: #f2a93b;
+
+  /* Complaint statuses (foreground / background) */
+  --color-status-open: #1d4ed8;
+  --color-status-open-bg: #dbeafe;
+  --color-status-in-progress: #b45309;
+  --color-status-in-progress-bg: #fef3c7;
+  --color-status-resolved: #15803d;
+  --color-status-resolved-bg: #dcfce7;
+  --color-status-rejected: #b91c1c;
+  --color-status-rejected-bg: #fee2e2;
+  --color-status-pending-verification: #6d28d9;
+  --color-status-pending-verification-bg: #ede9fe;
+  --color-status-reopened: #c2410c;
+  --color-status-reopened-bg: #ffedd5;
+
+  /* Feedback colors reuse the status hues */
+  --color-info: var(--color-status-open);
+  --color-info-bg: var(--color-status-open-bg);
+  --color-success: var(--color-status-resolved);
+  --color-success-bg: var(--color-status-resolved-bg);
+  --color-warning: var(--color-status-in-progress);
+  --color-warning-bg: var(--color-status-in-progress-bg);
+  --color-danger: var(--color-status-rejected);
+  --color-danger-bg: var(--color-status-rejected-bg);
+
+  /* Type scale 12/14/16/18/20/24/30/36 */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+
+  --tracking-heading: -0.015em;
+  --tracking-eyebrow: 0.08em;
+
+  /* 4px grid: p-2 = 8px, p-3 = 12px, p-4 = 16px, p-6 = 24px, p-8 = 32px, p-12 = 48px */
+  --spacing: 0.25rem;
+  --spacing-sidebar: 16.5rem;
+  --spacing-header: 4rem;
+  --spacing-touch: 2.75rem;
+
+  --container-content: 75rem;
+
+  /* Radius */
+  --radius-*: initial;
+  --radius-chip: 0.5rem;
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
+
+  /* Shadows */
+  --shadow-*: initial;
+  --shadow-card: 0 1px 2px rgb(28 35 33 / 0.06);
+  --shadow-card-hover: 0 4px 12px -2px rgb(28 35 33 / 0.1);
+  --shadow-popover: 0 8px 24px -6px rgb(28 35 33 / 0.12);
+
+  /* Motion */
+  --default-transition-duration: 150ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --animate-fade-in: fade-in 180ms var(--ease-standard);
+  --animate-pop-in: pop-in 200ms var(--ease-standard);
+  --animate-slide-in-right: slide-in-right 200ms var(--ease-standard);
+  --animate-slide-in-left: slide-in-left 200ms var(--ease-standard);
+  --animate-slide-in-up: slide-in-up 200ms var(--ease-standard);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  }
+  @keyframes slide-in-right {
+    from { transform: translateX(100%); }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes slide-in-up {
+    from { transform: translateY(100%); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* The font variable is set on <html> by next/font, so reference it inline. */
+@theme inline {
+  --font-*: initial;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-page font-sans text-base text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-bold tracking-heading text-brand-700;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    @apply bg-brand-50 text-brand-700;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }

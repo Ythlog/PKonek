@@ -1,19 +1,33 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "PKonek Citizen Platform",
-  description: "Report civic issues and track resolutions in Pasig City.",
+  title: {
+    default: "PKonek · Pasig City civic reporting",
+    template: "%s · PKonek",
+  },
+  description:
+    "Report community issues in Pasig City, follow their progress, and see how your barangay responds.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f4c5c",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="stylesheet" href="/citizen/styles.css" />
-        <link rel="icon" type="image/svg+xml" href="/citizen/favicon.svg" />
-      </head>
-      <body>{children}</body>
+    <html lang="en" className={jakarta.variable}>
+      <body className="min-h-dvh">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

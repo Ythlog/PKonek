@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Any
 
 import httpx
@@ -10,10 +11,13 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LUMEN_ENV_FILE = PROJECT_ROOT / "lumen" / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file="../lumen/.env", env_file_encoding="utf-8", extra="ignore"
+        env_file=LUMEN_ENV_FILE, env_file_encoding="utf-8", extra="ignore"
     )
 
     LUMEN_API_KEY: str = ""

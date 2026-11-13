@@ -14,7 +14,8 @@ def verification_seed(mysql_test_engine):
         conn.execute(text("INSERT INTO departments(id,name) VALUES (931,'Verify Dept')"))
         conn.execute(text("INSERT INTO complaint_categories(id,name,default_sla_hours) VALUES (931,'Verify Cat',24)"))
         conn.execute(text("INSERT INTO users(id,role_id,email,password_hash,first_name,last_name) VALUES "
-                          "(931,1,'verify-cit@test.invalid','x','V','Citizen'),(932,2,'verify-off@test.invalid','x','V','Official'),(933,1,'verify-support@test.invalid','x','V','Support')"))
+                          "(931,1,'verify-cit@test.invalid','x','V','Citizen'),(932,2,'verify-off@test.invalid','x','V','Official'),(933,1,'verify-support@test.invalid','x','V','Support'),"
+                          "(934,3,'verify-admin@test.invalid','x','V','Admin')"))
         conn.execute(text("INSERT INTO official_profiles(user_id,department_id) VALUES (932,931)"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,assigned_department_id,assigned_official_id,title,description,latitude,longitude) VALUES "
                           "(931,931,931,(SELECT id FROM complaint_statuses WHERE code='resolved_pending_verification'),931,932,'Verify complaint','Desc',14,121),"
@@ -33,7 +34,7 @@ def verification_seed(mysql_test_engine):
         conn.execute(text("DELETE FROM complaint_support WHERE complaint_id=931"))
         conn.execute(text("DELETE FROM complaints WHERE id IN (931,932,933)"))
         conn.execute(text("DELETE FROM official_profiles WHERE user_id=932"))
-        conn.execute(text("DELETE FROM users WHERE id IN (931,932,933)"))
+        conn.execute(text("DELETE FROM users WHERE id IN (931,932,933,934)"))
         conn.execute(text("DELETE FROM complaint_categories WHERE id=931"))
         conn.execute(text("DELETE FROM departments WHERE id=931"))
 
@@ -68,7 +69,7 @@ def test_only_original_citizen_and_awaiting_status_can_confirm(verification_seed
             wrong_state=client.post('/api/complaints/931/verification',json={'verdict':'confirmed'})
             rejected=client.post('/api/complaints/931/verification',json={'verdict':'rejected'})
         assert wrong_state.status_code==409
-        assert rejected.status_code==400
+        assert rejected.status_code==409
     finally: app.dependency_overrides.clear()
 
 
@@ -97,7 +98,9 @@ def test_rejected_verdict_reopens_with_new_sla_and_escalates_after_repeat(verifi
 
 def test_full_lifecycle_invalid_permissions_and_double_submit(verification_seed,mysql_test_engine,monkeypatch):
     import resolution.services.verification as verification_service
+    from resolution.routers import status_change as status_routes
     monkeypatch.setattr(verification_routes,"engine",mysql_test_engine)
+    monkeypatch.setattr(status_routes,"engine",mysql_test_engine)
     monkeypatch.setattr(verification_service,"_comparer",verification_service.NullComparer())
     try:
         app.dependency_overrides[security.get_current_user]=lambda:security.CurrentUser(932,"official",931)

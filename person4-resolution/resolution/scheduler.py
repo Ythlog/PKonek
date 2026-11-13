@@ -9,9 +9,21 @@ from .config import get_settings
 from .db import engine
 from .domain.sla import due_at
 from .repositories.notifications import get_recipients, notify
-from .services.notifications import SLA_WARNING
+from .services.notifications import ESCALATED, SLA_OVERDUE, SLA_WARNING
 
 _scheduler: BackgroundScheduler | None = None
+
+
+def _row_lock(connection) -> str:
+    """Use SKIP LOCKED where supported (MySQL 8.0.1+, MariaDB 10.6+); otherwise plain FOR UPDATE.
+
+    Plain FOR UPDATE is still correct because every job re-checks its guard (due_at IS NULL or a
+    cycle-keyed event) before writing; it only makes concurrent workers wait instead of skipping rows.
+    """
+    dialect = connection.dialect
+    version = tuple(dialect.server_version_info or ())
+    supported = version >= (10, 6) if getattr(dialect, "is_mariadb", False) else version >= (8, 0, 1)
+    return "FOR UPDATE SKIP LOCKED" if supported else "FOR UPDATE"
 
 
 def backfill_due_dates(*, connection_engine=engine, clock: Callable[[], datetime] | None = None,
@@ -25,8 +37,8 @@ def backfill_due_dates(*, connection_engine=engine, clock: Callable[[], datetime
           FROM complaints c JOIN complaint_categories cat ON cat.id=c.category_id
           JOIN complaint_statuses st ON st.id=c.status_id
           WHERE c.due_at IS NULL AND st.is_terminal=FALSE
-          ORDER BY c.id LIMIT :batch_size FOR UPDATE SKIP LOCKED
-        """), {"batch_size":batch_size}).mappings().all()
+          ORDER BY c.id LIMIT :batch_size
+        """ + _row_lock(connection)), {"batch_size":batch_size}).mappings().all()
         for row in rows:
             deadline = due_at(row["submitted_at"], float(row["default_sla_hours"]))
             result = connection.execute(text("""
@@ -52,10 +64,10 @@ def emit_sla_warnings(*, connection_engine=engine, clock: Callable[[], datetime]
           FROM complaints c JOIN complaint_statuses st ON st.id=c.status_id
           WHERE c.due_at IS NOT NULL AND st.is_terminal=FALSE
             AND st.code <> 'resolved_pending_verification'
-            AND c.due_at <= TIMESTAMPADD(SECOND,
-                -CAST(TIMESTAMPDIFF(SECOND,c.submitted_at,c.due_at) * (1-:warning_ratio) AS SIGNED), :now)
-          ORDER BY c.id LIMIT :batch_size FOR UPDATE SKIP LOCKED
-        """), {"warning_ratio":get_settings().sla_warning_ratio,"now":now,"batch_size":batch_size}).mappings().all()
+            AND :now >= TIMESTAMPADD(SECOND,
+                CAST(TIMESTAMPDIFF(SECOND,c.submitted_at,c.due_at) * :warning_ratio AS SIGNED), c.submitted_at)
+          ORDER BY c.id LIMIT :batch_size
+        """ + _row_lock(connection)), {"warning_ratio":get_settings().sla_warning_ratio,"now":now,"batch_size":batch_size}).mappings().all()
         for row in rows:
             cycle_start = row["submitted_at"]
             exists = connection.execute(text("""
@@ -95,8 +107,8 @@ def process_overdue_and_escalate(*, connection_engine=engine, clock: Callable[[]
           FROM complaints c JOIN complaint_statuses st ON st.id=c.status_id
           WHERE c.due_at IS NOT NULL AND c.due_at <= :now AND st.is_terminal=FALSE
             AND st.code <> 'resolved_pending_verification'
-          ORDER BY c.id LIMIT :batch_size FOR UPDATE SKIP LOCKED
-        """), {"now":now,"batch_size":batch_size}).mappings().all()
+          ORDER BY c.id LIMIT :batch_size
+        """ + _row_lock(connection)), {"now":now,"batch_size":batch_size}).mappings().all()
         for row in rows:
             cycle_key = row["submitted_at"].strftime("%Y-%m-%d %H:%M:%S.%f")
             exists = connection.execute(text("""
@@ -158,8 +170,8 @@ def escalate_level_two(*, connection_engine=engine, clock: Callable[[], datetime
             AND st.code <> 'resolved_pending_verification'
             AND :now >= TIMESTAMPADD(SECOND,
               CAST(cat.default_sla_hours * 3600 * :grace_ratio AS SIGNED),c.due_at)
-          ORDER BY c.id LIMIT :batch_size FOR UPDATE SKIP LOCKED
-        """), {"now":now,"grace_ratio":get_settings().escalation_l2_grace_ratio,
+          ORDER BY c.id LIMIT :batch_size
+        """ + _row_lock(connection)), {"now":now,"grace_ratio":get_settings().escalation_l2_grace_ratio,
               "batch_size":batch_size}).mappings().all()
         for row in rows:
             cycle_key=row["submitted_at"].strftime("%Y-%m-%d %H:%M:%S.%f")

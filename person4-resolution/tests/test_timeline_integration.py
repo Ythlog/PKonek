@@ -16,7 +16,7 @@ def timeline_seed(mysql_test_engine):
                           "(971,1,'timeline-owner@test.invalid','x','T','Owner'),(972,1,'timeline-other@test.invalid','x','T','Other'),"
                           "(973,2,'timeline-official@test.invalid','x','T','Official'),(974,3,'timeline-admin@test.invalid','x','T','Admin')"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,title,description,latitude,longitude) VALUES "
-                          "(971,971,971,1,'Timeline public','Description',14.5,121.0),(972,971,971,1,'Timeline private','Description',14.5,121.0)"))
+                          "(971,971,971,1,'Timeline public','Description',14.5,121.0),(972,972,971,1,'Timeline private','Description',14.5,121.0)"))
         conn.execute(text("INSERT INTO complaint_status_history(complaint_id,new_status_id,changed_by,change_source,note) VALUES "
                           "(971,1,971,'citizen','public history'),(971,2,973,'official','internal history')"))
         conn.execute(text("INSERT INTO complaint_responses(complaint_id,author_id,body,is_public) VALUES "

@@ -8,6 +8,7 @@ from resolution.repositories.admin_lists import daily_trends, escalation_list, u
 @pytest.fixture
 def admin_lists_seed(mysql_test_engine):
     with mysql_test_engine.begin() as conn:
+        conn.execute(text("INSERT INTO departments(id,name) VALUES (891,'List Dept')"))
         conn.execute(text("INSERT INTO complaint_categories(id,name,default_sla_hours) VALUES (891,'List Cat',24)"))
         conn.execute(text("INSERT INTO users(id,role_id,email,password_hash,first_name,last_name) VALUES (891,1,'lists-cit@test.invalid','x','L','Citizen')"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,title,description,latitude,longitude,submitted_at) VALUES "
@@ -27,6 +28,7 @@ def admin_lists_seed(mysql_test_engine):
         conn.execute(text("DELETE FROM complaints WHERE id BETWEEN 891 AND 894"))
         conn.execute(text("DELETE FROM users WHERE id=891"))
         conn.execute(text("DELETE FROM complaint_categories WHERE id=891"))
+        conn.execute(text("DELETE FROM departments WHERE id=891"))
 
 
 def test_daily_trend_recharts_shape_and_date_range(admin_lists_seed,mysql_test_engine):

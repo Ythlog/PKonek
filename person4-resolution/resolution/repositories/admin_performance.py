@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 
 def verification_rates(connection: Connection, dimension: str, department_id: int | None = None) -> list[dict]:
     if dimension == "official":
-        sql="""SELECT CAST(c.assigned_official_id AS CHAR) AS key, u.first_name AS label,
+        sql="""SELECT CAST(c.assigned_official_id AS CHAR) AS `key`, u.first_name AS label,
           SUM(v.verdict='confirmed') AS confirmed,SUM(v.verdict='rejected') AS rejected,
           100.0*SUM(v.verdict='confirmed')/NULLIF(SUM(v.verdict IN ('confirmed','rejected')),0) AS rate
           FROM complaints c JOIN complaint_verifications v ON v.complaint_id=c.id
@@ -14,7 +14,7 @@ def verification_rates(connection: Connection, dimension: str, department_id: in
             AND (:department_id IS NULL OR c.assigned_department_id=:department_id)
           GROUP BY c.assigned_official_id,u.first_name ORDER BY c.assigned_official_id"""
     elif dimension == "department":
-        sql="""SELECT CAST(c.assigned_department_id AS CHAR) AS key,d.name AS label,
+        sql="""SELECT CAST(c.assigned_department_id AS CHAR) AS `key`,d.name AS label,
           SUM(v.verdict='confirmed') AS confirmed,SUM(v.verdict='rejected') AS rejected,
           100.0*SUM(v.verdict='confirmed')/NULLIF(SUM(v.verdict IN ('confirmed','rejected')),0) AS rate
           FROM complaints c JOIN complaint_verifications v ON v.complaint_id=c.id

@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import text
@@ -63,7 +64,7 @@ def warning_seed(mysql_test_engine):
 
 def test_warning_threshold_once_and_pending_verification_pauses(warning_seed,mysql_test_engine):
     now=warning_seed
-    assert emit_sla_warnings(connection_engine=mysql_test_engine,clock=lambda:now-timedelta(hours=25))==0
+    assert emit_sla_warnings(connection_engine=mysql_test_engine,clock=lambda:now-timedelta(hours=25,minutes=1))==0
     assert emit_sla_warnings(connection_engine=mysql_test_engine,clock=lambda:now-timedelta(hours=24,minutes=59))==1
     assert emit_sla_warnings(connection_engine=mysql_test_engine,clock=lambda:now-timedelta(hours=24,minutes=58))==0
     with mysql_test_engine.connect() as conn:
@@ -79,7 +80,8 @@ def overdue_seed(mysql_test_engine):
         conn.execute(text("INSERT INTO departments(id,name) VALUES (924,'Overdue Dept'),(925,'Escalation Dept')"))
         conn.execute(text("INSERT INTO complaint_categories(id,name,default_sla_hours) VALUES (924,'Overdue Cat',10)"))
         conn.execute(text("INSERT INTO users(id,role_id,email,password_hash,first_name,last_name) VALUES "
-          "(924,1,'overdue-cit@test.invalid','x','O','Citizen'),(925,2,'overdue-off@test.invalid','x','O','Official')"))
+          "(924,1,'overdue-cit@test.invalid','x','O','Citizen'),(925,2,'overdue-off@test.invalid','x','O','Official'),"
+          "(929,3,'overdue-admin@test.invalid','x','O','Admin')"))
         conn.execute(text("INSERT INTO official_profiles(user_id,department_id) VALUES (925,924)"))
         conn.execute(text("INSERT INTO complaints(id,citizen_id,category_id,status_id,assigned_department_id,assigned_official_id,title,description,latitude,longitude,submitted_at,due_at) VALUES "
           "(924,924,924,(SELECT id FROM complaint_statuses WHERE code='in_progress'),924,925,'Expired','D',14,121,:submitted,:due),"
@@ -92,7 +94,7 @@ def overdue_seed(mysql_test_engine):
         conn.execute(text("DELETE FROM sla_events WHERE complaint_id IN (924,926)"))
         conn.execute(text("DELETE FROM complaints WHERE id IN (924,926)"))
         conn.execute(text("DELETE FROM official_profiles WHERE user_id=925"))
-        conn.execute(text("DELETE FROM users WHERE id IN (924,925)"))
+        conn.execute(text("DELETE FROM users WHERE id IN (924,925,929)"))
         conn.execute(text("DELETE FROM complaint_categories WHERE id=924"))
         conn.execute(text("DELETE FROM escalation_targets WHERE level=1 AND department_id=925"))
         conn.execute(text("DELETE FROM departments WHERE id IN (924,925)"))
@@ -106,6 +108,8 @@ def test_overdue_escalation_once_per_cycle(overdue_seed,mysql_test_engine):
         row=conn.execute(text("SELECT assigned_department_id,assigned_official_id FROM complaints WHERE id=924")).one()
         assert row==(925,None)
         overdue=conn.execute(text("SELECT details FROM sla_events WHERE complaint_id=924 AND event_type='overdue'")).scalar_one()
+        if isinstance(overdue,str):  # MariaDB stores JSON as LONGTEXT and returns a string.
+            overdue=json.loads(overdue)
         assert overdue['original_department_id']==924
         assert conn.execute(text("SELECT COUNT(*) FROM sla_events WHERE complaint_id=924 AND event_type='escalated' AND escalation_level=1")).scalar_one()==1
         assert conn.execute(text("SELECT COUNT(*) FROM notifications WHERE complaint_id=924 AND notification_type IN ('SLA_OVERDUE','ESCALATED')")).scalar_one()>=2

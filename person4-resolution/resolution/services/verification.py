@@ -35,7 +35,10 @@ def submit_verification(connection: Connection, user: CurrentUser, complaint_id:
         write_history(connection,complaint_id,user.id,note)
         write_audit(connection,complaint_id,user.id,verification["id"])
         add_completed_sla_event(connection,complaint_id,verification["id"])
-        for recipient in get_recipients(connection,complaint_id,COMPLAINT_RESOLVED):
+        recipients=set(get_recipients(connection,complaint_id,COMPLAINT_RESOLVED))
+        if complaint["assigned_official_id"] is not None:
+            recipients.add(int(complaint["assigned_official_id"]))
+        for recipient in sorted(recipients):
             notify(connection,recipient,complaint_id,COMPLAINT_RESOLVED,"Complaint resolution confirmed","The citizen confirmed this complaint is resolved.")
         return {**verification,"status_code":"resolved"}
 

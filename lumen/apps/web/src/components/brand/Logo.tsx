@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export const LOGO_SRC = "/brand/pkonek-logo.png";
+export const LOGO_SRC = "/brand/pkonek-logo.svg";
 
 type LogoProps = {
   /**

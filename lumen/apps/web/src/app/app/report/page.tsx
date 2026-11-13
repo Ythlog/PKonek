@@ -3,6 +3,8 @@ import { ReportWizard } from "@/components/report/ReportWizard";
 import { PageHeader } from "@/components/shell/PageHeader";
 
 export const metadata: Metadata = { title: "Report an Issue" };
+// The report wizard is interactive and isn't part of Next's instant static navigation.
+export const instant = false;
 
 export default function ReportPage() {
   return (

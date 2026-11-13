@@ -23,6 +23,13 @@ It is **not connected to `apps/api` yet**. It uses the same venv and the same `l
    ..\..\apps\api\.venv\Scripts\python.exe -m accounts_complaints.create_admin --email admin@pasig.gov.ph --name "Pasig Admin"
    ```
 
+For live API demos, create the citizen, Kapitolyo official, and Pasig admin
+accounts with a password you choose (prompted securely; the command skips
+existing accounts without changing their credentials):
+```
+..\..\apps\api\.venv\Scripts\python.exe -m accounts_complaints.create_demo_accounts
+```
+
 Tables: `users`, `account_activity_logs`, `audit_logs`, `complaint_categories`, `complaints`, `complaint_supports`.
 
 ## 2. Environment (`lumen/.env`)

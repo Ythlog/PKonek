@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Textarea } from "@/components/ui/Textarea";
+import { ChatbotAssistant } from "@/components/report/ChatbotAssistant";
 import type { Category, Pin } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { BARANGAY_NAMES } from "@/lib/pasig";
@@ -246,6 +247,7 @@ export function DetailsStep({
           onChange={(e) => onChange({ description: e.target.value })}
         />
       </Field>
+      <ChatbotAssistant onUseDraft={(description) => onChange({ description })} />
     </div>
   );
 }

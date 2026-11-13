@@ -11,6 +11,7 @@ from ..deps import (
     client_ip,
     create_complaint_limiter,
     dup_check_limiter,
+    get_current_user,
     get_optional_user,
     require_staff,
     support_limiter,
@@ -38,6 +39,28 @@ DUPLICATE_409 = {
         "call POST /complaints/{id}/support instead."
     }
 }
+
+
+@router.get("/mine", response_model=Page[ComplaintOut], summary="List the signed-in citizen's complaints")
+def list_my_complaints(
+    status_: list[ComplaintStatus] | None = Query(default=None, alias="status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user.role != "citizen":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Citizen access is required")
+    filters = service.ComplaintFilters(status=status_, created_by_user_id=user.id)
+    items, total = service.list_complaints(
+        db, filters, sort="created_at", order="desc", page=page, page_size=page_size
+    )
+    return Page(
+        items=[ComplaintOut.model_validate(complaint) for complaint in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 def _out(complaint, user: User | None):

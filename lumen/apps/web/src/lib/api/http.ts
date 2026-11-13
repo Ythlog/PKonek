@@ -91,7 +91,11 @@ export function createHttpApi(
     complaints: {
       checkDuplicates: async (input) => (await api.post("/complaints/check-duplicates", input)).data,
       create: async (input) => (await api.post("/complaints", input)).data,
-      list: async (filters?: ComplaintFilters) => (await api.get("/complaints", { params: clean(filters) })).data,
+      list: async (filters?: ComplaintFilters) => {
+        const { mine, ...params } = filters ?? {};
+        const endpoint = mine ? "/complaints/mine" : "/complaints";
+        return (await api.get(endpoint, { params: clean(params) })).data;
+      },
       get: async (id) => (await api.get(`/complaints/${id}`)).data,
       support: async (id, input) => (await api.post(`/complaints/${id}/support`, input)).data,
       updateStatus: async (id, input) => (await api.patch(`/complaints/${id}/status`, input)).data,

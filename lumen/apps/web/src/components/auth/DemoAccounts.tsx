@@ -13,7 +13,6 @@ type DemoAccountsProps = {
 
 /** Mock mode only: one-click demo credentials for presentations. */
 export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccountsProps) {
-  if (!enabled) return null;
   const accounts = DEMO_ACCOUNTS.filter((a) => roles.includes(a.role));
   return (
     <section aria-labelledby="demo-accounts" className="rounded-card border border-dashed border-accent bg-accent/10 px-4 py-3">
@@ -22,7 +21,11 @@ export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccount
         <KeyRound aria-hidden size={16} strokeWidth={1.75} />
         Demo Accounts
       </h2>
-        <p className="text-xs text-muted">Password: <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code></p>
+        {enabled ? (
+          <p className="text-xs text-muted">Password: <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code></p>
+        ) : (
+          <p className="text-xs text-muted">Use the password selected during live account setup.</p>
+        )}
       </div>
       <ul className="mt-2 grid gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
         {accounts.map((a) => (
@@ -30,7 +33,8 @@ export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccount
             <button
               type="button"
               onClick={() => onPick(a.email, DEMO_PASSWORD)}
-              className="flex min-h-touch w-full items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 text-left text-sm transition-colors hover:border-brand-600/40 hover:bg-brand-50"
+              disabled={!enabled}
+              className="flex min-h-touch w-full items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 text-left text-sm transition-colors enabled:hover:border-brand-600/40 enabled:hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="min-w-0">
                 <span className="block font-semibold text-ink">{a.label}</span>

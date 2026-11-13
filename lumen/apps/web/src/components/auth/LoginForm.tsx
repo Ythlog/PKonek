@@ -129,7 +129,7 @@ export function LoginForm({ area }: { area: Area }) {
         </Alert>
       )}
 
-      <form noValidate onSubmit={onSubmit} className="grid gap-4" aria-label={area === "staff" ? "Staff sign in" : "Resident sign in"}>
+      <form method="post" noValidate onSubmit={onSubmit} className="grid gap-4" aria-label={area === "staff" ? "Staff sign in" : "Resident sign in"}>
         <Field label={area === "staff" ? "Work email" : "Email address"} error={errors.email} required>
           <Input
             ref={emailRef}

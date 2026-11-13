@@ -6,7 +6,7 @@ import { Circle, CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap }
 import type { ComplaintStatus } from "@/lib/api/types";
 import type { HotspotLevel } from "@/lib/hotspots";
 import type { ComplaintMapProps, MapFocus } from "./ComplaintMap";
-import { DEFAULT_ZOOM, MAP_CENTER, MAX_BOUNDS, TILE_ATTRIBUTION, TILE_URL } from "./config";
+import { BASEMAP, DEFAULT_ZOOM, MAP_CENTER, MAX_BOUNDS, MAX_ZOOM } from "./config";
 
 /** Token classes on SVG paths; CSS wins over Leaflet's presentation attributes. */
 const statusClass: Record<ComplaintStatus, string> = {
@@ -34,8 +34,9 @@ function FocusOn({ focus }: { focus?: MapFocus | null }) {
 
 export default function ComplaintMapCanvas({ points = [], hotspots = [], selectedId, onSelect, renderPopup, onSelectHotspot, focus, me, label }: ComplaintMapProps) {
   return (
-    <MapContainer center={MAP_CENTER} zoom={DEFAULT_ZOOM} minZoom={12} maxBounds={MAX_BOUNDS} maxBoundsViscosity={0.8} scrollWheelZoom className="size-full" aria-label={label}>
-      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+    <MapContainer center={MAP_CENTER} zoom={DEFAULT_ZOOM} minZoom={12}
+      maxZoom={MAX_ZOOM} maxBounds={MAX_BOUNDS} maxBoundsViscosity={0.8} scrollWheelZoom className="size-full" aria-label={label}>
+      <TileLayer url={BASEMAP.url} attribution={BASEMAP.attribution} maxNativeZoom={BASEMAP.maxNativeZoom} maxZoom={MAX_ZOOM} />
       <FocusOn focus={focus} />
 
       {hotspots.map((h) => (

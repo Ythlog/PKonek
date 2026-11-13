@@ -5,7 +5,7 @@ import { useEffect, useMemo } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import type { Pin } from "@/lib/api/types";
-import { DEFAULT_ZOOM, MAP_CENTER, MAX_BOUNDS, PIN_ZOOM, TILE_ATTRIBUTION, TILE_URL } from "./config";
+import { BASEMAP, DEFAULT_ZOOM, MAP_CENTER, MAX_BOUNDS, MAX_ZOOM, PIN_ZOOM } from "./config";
 import type { PinMapProps } from "./PinMap";
 
 /** Brand-colored pin drawn with HTML, so no image assets are needed. */
@@ -63,6 +63,7 @@ export default function PinMapCanvas({ value, onChange, nearby = [], focusKey = 
       center={center}
       zoom={value ? PIN_ZOOM : DEFAULT_ZOOM}
       minZoom={12}
+      maxZoom={MAX_ZOOM}
       maxBounds={MAX_BOUNDS}
       maxBoundsViscosity={0.8}
       scrollWheelZoom={false}
@@ -70,7 +71,7 @@ export default function PinMapCanvas({ value, onChange, nearby = [], focusKey = 
       attributionControl
       aria-label={label}
     >
-      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+      <TileLayer url={BASEMAP.url} attribution={BASEMAP.attribution} maxNativeZoom={BASEMAP.maxNativeZoom} maxZoom={MAX_ZOOM} />
       <ClickToPin onChange={onChange} />
       <FlyToPin pin={value} focusKey={focusKey} />
       <CenterPinBridge register={registerCenterPin} />

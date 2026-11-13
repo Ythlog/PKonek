@@ -296,6 +296,60 @@ describe("citizen verification", () => {
   });
 });
 
+describe("notifications", () => {
+  it("seeds an inbox for each demo account", async () => {
+    for (const email of ["citizen@pkonek.demo", "official@pkonek.demo", "admin@pkonek.demo"]) {
+      await signIn(email);
+      expect((await api.notifications.list()).total).toBeGreaterThan(0);
+      expect(await api.notifications.unreadCount()).toBeGreaterThan(0);
+    }
+  });
+
+  it("tells the reporter about status changes and updates, and officials about new reports", async () => {
+    await signIn("citizen@pkonek.demo");
+    const before = await api.notifications.unreadCount();
+    const created = await api.complaints.create({ category_id: 4, title: "Dark alley", description: "No lights at all", latitude: 14.5735, longitude: 121.0612, barangay: "Kapitolyo" });
+
+    await signIn("official@pkonek.demo");
+    expect((await api.notifications.list({ unread: true })).items[0]).toMatchObject({ notification_type: "NEW_COMPLAINT", complaint_id: created.id });
+    await api.complaints.updateStatus(created.id, { status: "resolved" });
+    await api.complaints.postUpdate(created.id, { body: "Fixed the bulbs.", is_public: true });
+    await api.complaints.postUpdate(created.id, { body: "internal", is_public: false });
+
+    await signIn("citizen@pkonek.demo");
+    const inbox = await api.notifications.list({ unread: true });
+    expect(await api.notifications.unreadCount()).toBe(before + 2);
+    expect(inbox.items.slice(0, 2).map((n) => n.notification_type)).toEqual(["OFFICIAL_RESPONSE", "VERIFICATION_REQUESTED"]);
+  });
+
+  it("marks one or all as read, and only for the owner", async () => {
+    await signIn("citizen@pkonek.demo");
+    const [first] = (await api.notifications.list({ unread: true })).items;
+    await api.notifications.markRead(first.id);
+    expect((await api.notifications.list({ unread: true })).items.map((n) => n.id)).not.toContain(first.id);
+    await signIn("official@pkonek.demo");
+    expect((await rejection(api.notifications.markRead(first.id))).status).toBe(404);
+    await api.notifications.markAllRead();
+    expect(await api.notifications.unreadCount()).toBe(0);
+  });
+});
+
+describe("public data", () => {
+  it("serves map points without reporter details, to anyone", async () => {
+    const points = await api.map.points({ status: ["open"] });
+    expect(points.length).toBe(createSeed(NOW).complaints.filter((c) => c.status === "open").length);
+    expect(points[0]).not.toHaveProperty("reporter_contact");
+  });
+
+  it("builds the accountability summary from aggregates only", async () => {
+    const s = await api.publicReport.summary();
+    expect(s.total).toBe(createSeed(NOW).complaints.length);
+    expect(s.by_barangay.reduce((sum, b) => sum + b.total, 0)).toBe(s.total);
+    expect(s.recently_resolved[0].hours_to_resolve).toBeGreaterThan(0);
+    expect(JSON.stringify(s)).not.toMatch(/@|reporter/);
+  });
+});
+
 describe("admin routes", () => {
   it("are admin only", async () => {
     await signIn("official@pkonek.demo");

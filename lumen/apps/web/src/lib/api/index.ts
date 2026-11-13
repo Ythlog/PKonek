@@ -15,6 +15,9 @@ export const complaintService = api.complaints;
 export const userService = api.users;
 export const logService = api.logs;
 export const mediaService = api.media;
+export const mapService = api.map;
+export const publicReportService = api.publicReport;
+export const notificationService = api.notifications;
 
 export { USE_MOCKS };
 export type { PKonekApi } from "./contract";

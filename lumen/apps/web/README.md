@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PKonek web app
 
-## Getting Started
+The frontend for PKonek, a civic reporting platform for Pasig City. One Next.js app serves residents, barangay officials and Pasig administrators.
 
-First, run the development server:
+Stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, TanStack Query, Leaflet, Recharts, Zod, Vitest.
 
-```bash
+## Run it
+
+```powershell
+cd lumen/apps/web
+npm install
+copy .env.example .env.local   # first time only
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. By default the app runs in **demo mode**: it uses built-in data and needs no backend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Every demo account uses the password `Demo1234!`. The sign-in pages also list them, so you can fill them in with one click.
 
-## Learn More
+| Role | Email | Signs in at | Lands on |
+|---|---|---|---|
+| Resident | `citizen@pkonek.demo` | `/login` | `/app` |
+| Barangay official (Kapitolyo) | `official@pkonek.demo` | `/staff/login` | `/official` |
+| Pasig administrator | `admin@pkonek.demo` | `/staff/login` | `/admin` |
 
-To learn more about Next.js, take a look at the following resources:
+Demo changes are saved in your browser. To start over, delete `pkonek.mock.v4` under DevTools → Application → Local Storage, then reload.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Use the real backend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Start `lumen/modules/accounts_complaints` on port 8001. Start `media_backend` on port 8002 for photos.
+2. In `.env.local`, set `NEXT_PUBLIC_USE_MOCKS=false`.
+3. Restart `npm run dev`.
 
-## Deploy on Vercel
+The browser calls `/api/*` and `/media/*` on the Next.js server, and `next.config.ts` forwards them to the targets in `API_PROXY_TARGET` and `MEDIA_PROXY_TARGET`. The backends have no CORS support, so this proxy is required.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### What works against the real backend today
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Feature | Real backend | Demo mode |
+|---|---|---|
+| Sign in, registration, roles | Yes | Yes |
+| Report an issue, duplicate check, Me Too | Yes | Yes |
+| Photo upload | Yes (media_backend) | Yes |
+| Staff complaint list, filters, status changes | Yes | Yes |
+| Admin users, categories, logs | Yes | Yes |
+| Staff maps and analytics (computed in the browser) | Yes | Yes |
+| Resident "My reports" list | No: `GET /complaints` is staff only | Yes |
+| Community map for residents | No: needs a public complaints list | Yes |
+| Official updates, full timeline, confirm or reopen | No: person4 endpoints use `db/schema.sql` | Yes |
+| Notifications | No: person4 endpoints use `db/schema.sql` | Yes |
+| Public accountability report | No: needs a public summary endpoint | Yes |
+
+Each missing endpoint has a `TODO(backend)` comment in `src/lib/api/http.ts`.
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server with hot reload |
+| `npm run build` | Production build and type check |
+| `npm run lint` | ESLint |
+| `npm run test:run` | Every test once. `npm test` keeps watching. |
+
+## Where things are
+
+```
+src/app/                 Routes. /app = residents, /official, /admin, /accountability (public)
+src/components/ui/       Shared components (Button, Field, Modal, StatusBadge...). See /styleguide
+src/components/shell/    Role shells, access check (RequireRole), page header
+src/lib/api/             Typed API. http.ts = real backend, mock/ = demo mode
+src/lib/                 Pure logic with tests: analytics, hotspots, filters, tracking
+src/app/globals.css      Design tokens (colors, type, radius, shadows). The only place raw values live
+```
+
+## Design rules
+
+- **Tokens only:** use token utilities such as `bg-brand-600`, `rounded-card` and `shadow-card`. Never hard-code hex colors, font sizes, radii or shadows. Tailwind's default palette is turned off.
+- **Same tokens for every role:** only the layout differs. Residents get a top bar and a mobile tab bar; staff get the teal sidebar.
+- **Accessibility:** every input sits in `<Field>` for its label, helper text and error. Touch targets are at least 44px, and status always shows a dot and a label.
+- **Tests that check this:** `src/lib/contrast.test.ts` checks WCAG AA contrast for the token pairs, and `src/a11y.test.tsx` runs axe on the main screens.
+
+The logo goes in `public/brand/pkonek-logo.png`. Until it's there, a text wordmark is shown.

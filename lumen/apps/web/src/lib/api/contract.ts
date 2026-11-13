@@ -16,7 +16,9 @@ import type {
   LogParams,
   MediaType,
   MediaUpload,
+  Notification,
   Page,
+  PublicSummary,
   StatusUpdate,
   SupportCreate,
   TimelineItem,
@@ -62,8 +64,22 @@ export interface PKonekApi {
     /** The signed-in citizen's verifications, newest first. */
     myVerifications(): Promise<Verification[]>;
   };
+  /** Complaints for maps and statistics, without reporter details. */
+  map: {
+    /** All complaints matching the filters (follows every page). */
+    points(filters?: ComplaintFilters): Promise<Complaint[]>;
+  };
+  publicReport: {
+    summary(): Promise<PublicSummary>;
+  };
+  notifications: {
+    list(params?: { unread?: boolean; page?: number; page_size?: number }): Promise<Page<Notification>>;
+    unreadCount(): Promise<number>;
+    markRead(id: number): Promise<void>;
+    markAllRead(): Promise<void>;
+  };
   /** Features that only work in some environments, so screens can hide them. */
-  capabilities: { verification: boolean };
+  capabilities: { verification: boolean; notifications: boolean; publicData: boolean };
   users: {
     list(params?: UserListParams): Promise<Page<User>>;
     get(id: number): Promise<User>;

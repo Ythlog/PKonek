@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ExternalLink, Menu, Search } from "lucide-react";
+import { ExternalLink, Menu, Search } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { DemoModePill } from "@/components/DemoModePill";
 import { Drawer } from "@/components/ui/Modal";
@@ -13,6 +13,7 @@ import { homePathFor } from "@/lib/auth/routes";
 import { isActive, staffNav, type NavGroup } from "@/lib/nav";
 import { SkipLink } from "./SkipLink";
 import { UserMenu } from "./UserMenu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 type StaffRole = "official" | "pasig_admin";
 
@@ -151,14 +152,7 @@ export function StaffShell({ role, children }: { role: StaffRole; children: Reac
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <DemoModePill className="hidden sm:inline-flex" />
-            <Link
-              href={`${base}/notifications`}
-              aria-label="Notifications"
-              aria-current={isActive({ href: `${base}/notifications` }, pathname) ? "page" : undefined}
-              className="flex size-touch items-center justify-center rounded-full text-muted transition-colors hover:bg-page hover:text-ink"
-            >
-              <Bell aria-hidden size={20} strokeWidth={1.75} />
-            </Link>
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>

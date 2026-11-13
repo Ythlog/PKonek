@@ -1,5 +1,5 @@
 import { PASIG_BARANGAYS } from "@/lib/pasig";
-import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, ComplaintUpdate, Role, User, Verification } from "../types";
+import type { ActivityLog, AuditLog, Category, ComplaintStaff, ComplaintStatus, ComplaintUpdate, Notification, Role, User, Verification } from "../types";
 
 /** Demo accounts. Shown on the login screens while mock mode is on. */
 export const DEMO_PASSWORD = "Demo1234!";
@@ -25,7 +25,7 @@ export type MockSupport = {
 export type MockMedia = { id: number; complaint_id: number; uploaded_by: number; media_type: string; url: string; created_at: string };
 
 export type MockDb = {
-  version: 3;
+  version: 4;
   users: MockUser[];
   categories: Category[];
   complaints: ComplaintStaff[];
@@ -33,6 +33,7 @@ export type MockDb = {
   updates: ComplaintUpdate[];
   media: MockMedia[];
   verifications: Verification[];
+  notifications: Notification[];
   activity: ActivityLog[];
   audit: AuditLog[];
 };
@@ -185,6 +186,36 @@ function seedVerifications(complaints: ComplaintStaff[]): Verification[] {
   }));
 }
 
+/** A realistic inbox for each demo account, derived from the seeded complaints. */
+function seedNotifications(complaints: ComplaintStaff[], now: number): Notification[] {
+  const out: Notification[] = [];
+  const add = (user_id: number, c: ComplaintStaff, notification_type: Notification["notification_type"], title: string, message: string, at: string, read: boolean) =>
+    out.push({ id: out.length + 1, user_id, complaint_id: c.id, notification_type, title, message, created_at: at, read_at: read ? at : null });
+
+  for (const c of complaints.filter((c) => c.created_by_user_id === 5)) {
+    if (c.status === "in_progress") {
+      add(5, c, "STATUS_CHANGED", "Your report is being worked on", `${c.reference_no}: ${c.title}`, c.updated_at, true);
+      add(5, c, "OFFICIAL_RESPONSE", "New update from your barangay", "A crew is scheduled to work on this within the week.", c.updated_at, false);
+    }
+    if (c.status === "resolved" && c.resolved_at) {
+      add(5, c, "VERIFICATION_REQUESTED", "Is it fixed? Please confirm", `${c.reference_no} was marked fixed. Check it and let your barangay know.`, c.resolved_at, false);
+    }
+    if (c.status === "rejected") {
+      add(5, c, "STATUS_CHANGED", "Your report was closed", `${c.reference_no} was reviewed and closed. See the update for the reason.`, c.updated_at, true);
+    }
+  }
+  const recent = (list: ComplaintStaff[]) => [...list].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  recent(complaints.filter((c) => c.barangay === "Kapitolyo" && c.created_by_user_id !== 2)).slice(0, 4).forEach((c, i) =>
+    add(2, c, "NEW_COMPLAINT", "New report in Kapitolyo", `${c.reference_no}: ${c.title}`, c.created_at, i > 1),
+  );
+  [...complaints]
+    .filter((c) => c.status === "open")
+    .sort((a, b) => b.report_count - a.report_count)
+    .slice(0, 3)
+    .forEach((c, i) => add(1, c, "SUPPORT_ADDED", `${c.report_count} residents reported this`, `${c.reference_no} in ${c.barangay}: ${c.title}`, iso(Math.min(now, Date.parse(`${c.created_at}Z`) + 3_600_000)), i > 0));
+  return out.sort((a, b) => b.created_at.localeCompare(a.created_at)).map((n, i) => ({ ...n, id: i + 1 }));
+}
+
 export function createSeed(now = Date.now()): MockDb {
   const hour = 3_600_000;
   const year = new Date(now).getFullYear();
@@ -242,5 +273,5 @@ export function createSeed(now = Date.now()): MockDb {
     .filter((u) => u.last_login_at)
     .map((u, i) => ({ id: i + 1, user_id: u.id, email: u.email, action: "login_success", ip_address: "127.0.0.1", user_agent: "Demo browser", details: null, created_at: u.last_login_at! }));
 
-  return { version: 3, users, categories, complaints, supports: [], updates: seedUpdates(complaints, now), media: [], verifications: seedVerifications(complaints), activity, audit };
+  return { version: 4, users, categories, complaints, supports: [], updates: seedUpdates(complaints, now), media: [], verifications: seedVerifications(complaints), notifications: seedNotifications(complaints, now), activity, audit };
 }

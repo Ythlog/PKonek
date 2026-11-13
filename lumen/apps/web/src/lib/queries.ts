@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { categoryService, complaintService } from "@/lib/api";
+import { categoryService, complaintService, mapService } from "@/lib/api";
 import type { Category, ComplaintFilters } from "@/lib/api/types";
 
 /** Query keys in one place so mutations can invalidate them. */
@@ -48,6 +48,13 @@ export function useMyVerifications(enabled = true) {
     queryKey: queryKeys.verifications,
     queryFn: () => complaintService.myVerifications(),
     enabled,
+  });
+}
+
+export function useMapPoints(filters: ComplaintFilters = {}) {
+  return useQuery({
+    queryKey: ["complaints", "map", filters],
+    queryFn: () => mapService.points(filters),
   });
 }
 

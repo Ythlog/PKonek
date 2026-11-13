@@ -11,11 +11,13 @@ import {
   type ComplaintStatus,
   type ComplaintUpdate,
   type Page,
+  type Notification,
   type TimelineItem,
   type Verification,
   type Role,
   type User,
 } from "../types";
+import { byBarangay, byCategory, median, resolutionHours, summarizeComplaints } from "@/lib/analytics";
 import { localStoragePersistence, type MockPersistence } from "./persistence";
 import { createSeed, type MockDb, type MockUser } from "./seed";
 
@@ -200,6 +202,19 @@ export function createMockApi({
     d.audit.push({ ...entry, id: nextId(d.audit), ip_address: "127.0.0.1", created_at: stamp() });
   }
 
+  function notify(userIds: Array<number | null | undefined>, complaint: ComplaintStaff, type: Notification["notification_type"], title: string, message: string) {
+    const d = load();
+    for (const user_id of new Set(userIds.filter((u): u is number => typeof u === "number"))) {
+      d.notifications.push({ id: nextId(d.notifications), user_id, complaint_id: complaint.id, notification_type: type, title, message, read_at: null, created_at: stamp() });
+    }
+  }
+  /** Officials assigned to the complaint's barangay. */
+  function barangayOfficials(complaint: ComplaintStaff) {
+    return load()
+      .users.filter((u) => u.role === "official" && u.is_active && u.barangay && u.barangay === complaint.barangay)
+      .map((u) => u.id);
+  }
+
   function validatePin(lat: unknown, lng: unknown) {
     if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
       fail(422, "A location pin (latitude and longitude) is required.");
@@ -242,7 +257,7 @@ export function createMockApi({
   }
   const out = (c: ComplaintStaff, viewer: MockUser | null) => (isStaff(viewer) ? c : publicComplaint(c));
 
-  function filterComplaints(f: ComplaintFilters, viewer: MockUser) {
+  function filterComplaints(f: ComplaintFilters, viewer: MockUser | null) {
     const bbox = [f.min_lat, f.min_lng, f.max_lat, f.max_lng];
     if (bbox.some((v) => v !== undefined) && bbox.some((v) => v === undefined)) fail(400, "Provide all of min_lat, min_lng, max_lat, max_lng.");
     const near = [f.near_lat, f.near_lng, f.radius_m];
@@ -263,7 +278,7 @@ export function createMockApi({
       }
       if (f.min_lat !== undefined && !(c.latitude >= f.min_lat && c.latitude <= f.max_lat! && c.longitude >= f.min_lng! && c.longitude <= f.max_lng!)) return false;
       if (f.near_lat !== undefined && haversineM(f.near_lat, f.near_lng!, c.latitude, c.longitude) > f.radius_m!) return false;
-      if (f.mine && c.created_by_user_id !== viewer.id) return false;
+      if (f.mine && c.created_by_user_id !== viewer?.id) return false;
       return true;
     });
     const sort = f.sort ?? "created_at";
@@ -422,6 +437,7 @@ export function createMockApi({
             created_by_user_id: viewer?.id ?? null,
           };
           d.complaints.push(complaint);
+          notify(barangayOfficials(complaint), complaint, "NEW_COMPLAINT", `New report in ${complaint.barangay}`, `${complaint.reference_no}: ${complaint.title}`);
           logAudit({ actor_user_id: viewer?.id ?? null, entity_type: "complaint", entity_id: id, action: "create", before_data: null, after_data: { status: "open", title: complaint.title } });
           commit();
           return out(complaint, viewer);
@@ -459,6 +475,7 @@ export function createMockApi({
           d.supports.push({ id: nextId(d.supports), complaint_id: id, reporter_contact: contact, note: input.note ?? null, latitude: lat, longitude: lng, created_at: stamp() });
           const before = complaint.report_count;
           complaint.report_count += 1;
+          notify([complaint.created_by_user_id], complaint, "SUPPORT_ADDED", "A neighbor said Me Too", `${complaint.report_count} residents have now reported ${complaint.reference_no}.`);
           complaint.updated_at = stamp();
           logAudit({ actor_user_id: viewer?.id ?? null, entity_type: "complaint", entity_id: id, action: "support", before_data: { report_count: before }, after_data: { report_count: complaint.report_count, distance_m: Math.round(distance * 10) / 10 } });
           commit();
@@ -505,10 +522,11 @@ export function createMockApi({
           const body = (input.body ?? "").trim();
           if (!body) invalid({ body: "String should have at least 1 character" });
           if (body.length > 2000) invalid({ body: "String should have at most 2000 characters" });
-          getComplaintRow(id);
+          const complaint = getComplaintRow(id);
           const d = load();
           const update: ComplaintUpdate = { id: nextId(d.updates), complaint_id: id, author_id: actor.id, author_name: actor.full_name, body, is_public: input.is_public, created_at: stamp() };
           d.updates.push(update);
+          if (input.is_public) notify([complaint.created_by_user_id], complaint, "OFFICIAL_RESPONSE", "New update from your barangay", body);
           logAudit({ actor_user_id: actor.id, entity_type: "complaint_response", entity_id: update.id, action: "response_created", before_data: null, after_data: { complaint_id: id, body, is_public: input.is_public } });
           commit();
           return update;
@@ -525,6 +543,7 @@ export function createMockApi({
           if (input.verdict === "rejected" && !note) invalid({ note: "Tell the barangay what is still wrong." });
           const verification = { id: nextId(d.verifications), complaint_id: id, citizen_id: viewer.id, verdict: input.verdict, note, created_at: stamp() };
           d.verifications.push(verification);
+          notify(barangayOfficials(complaint), complaint, input.verdict === "confirmed" ? "COMPLAINT_RESOLVED" : "COMPLAINT_REOPENED", input.verdict === "confirmed" ? `Fix confirmed: ${complaint.reference_no}` : `Reopened by the resident: ${complaint.reference_no}`, note ?? complaint.title);
           if (input.verdict === "rejected") {
             // Reopened: back to the officials' queue.
             complaint.status = "open";
@@ -553,6 +572,13 @@ export function createMockApi({
           complaint.status = input.status;
           complaint.updated_at = stamp();
           if (input.status === "resolved") complaint.resolved_at = stamp();
+          notify(
+            [complaint.created_by_user_id],
+            complaint,
+            input.status === "resolved" ? "VERIFICATION_REQUESTED" : "STATUS_CHANGED",
+            input.status === "resolved" ? "Is it fixed? Please confirm" : `Your report is now ${input.status === "in_progress" ? "being worked on" : "closed"}`,
+            `${complaint.reference_no}: ${complaint.title}`,
+          );
           logAudit({ actor_user_id: actor.id, entity_type: "complaint", entity_id: id, action: "status_change", before_data: { status: current }, after_data: { status: input.status, resolved_at: complaint.resolved_at, note: input.note ?? null } });
           commit();
           return complaint;
@@ -661,7 +687,91 @@ export function createMockApi({
         }),
     },
 
-    capabilities: { verification: true },
+    map: {
+      points: (filters = {}) =>
+        run(() => {
+          // Public, anonymized data: no reporter details, no "mine" filter.
+          const rows = filterComplaints({ ...filters, mine: undefined, page: undefined, page_size: undefined }, null);
+          return rows.map(publicComplaint);
+        }),
+    },
+
+    publicReport: {
+      summary: () =>
+        run(() => {
+          const d = load();
+          const items = d.complaints;
+          const categories = new Map(d.categories.map((c) => [c.id, c]));
+          const s = summarizeComplaints(items);
+          const groupRows = (rows: ReturnType<typeof byBarangay>, list: (key: string) => ComplaintStaff[]) =>
+            rows.map((r) => ({
+              key: r.key,
+              label: r.label,
+              total: r.total,
+              resolved: r.resolved,
+              active: r.active,
+              resolution_rate: r.resolutionRate,
+              median_resolution_hours: median(resolutionHours(list(r.key))),
+            }));
+          return {
+            generated_at: stamp(),
+            total: s.total,
+            active: s.active,
+            resolved: s.resolved,
+            rejected: s.rejected,
+            supports: s.supports,
+            resolution_rate: s.resolutionRate,
+            median_resolution_hours: s.medianResolutionHours,
+            by_barangay: groupRows(byBarangay(items), (key) => items.filter((c) => c.barangay === key)),
+            by_category: groupRows(byCategory(items, categories), (key) => items.filter((c) => String(c.category_id) === key)),
+            recently_resolved: items
+              .filter((c) => c.status === "resolved" && c.resolved_at)
+              .sort((a, b) => b.resolved_at!.localeCompare(a.resolved_at!))
+              .slice(0, 6)
+              .map((c) => ({
+                id: c.id,
+                reference_no: c.reference_no,
+                title: c.title,
+                barangay: c.barangay,
+                category_id: c.category_id,
+                resolved_at: c.resolved_at!,
+                hours_to_resolve: (Date.parse(`${c.resolved_at}Z`) - Date.parse(`${c.created_at}Z`)) / 3_600_000,
+              })),
+          };
+        }),
+    },
+
+    notifications: {
+      list: (params = {}) =>
+        run(() => {
+          const viewer = requireUser();
+          const rows = load()
+            .notifications.filter((n) => n.user_id === viewer.id && (params.unread ? !n.read_at : true))
+            .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
+          return page(rows, params.page, params.page_size);
+        }),
+      unreadCount: () =>
+        run(() => {
+          const viewer = requireUser();
+          return load().notifications.filter((n) => n.user_id === viewer.id && !n.read_at).length;
+        }),
+      markRead: (id) =>
+        run(() => {
+          const viewer = requireUser();
+          const n = load().notifications.find((n) => n.id === id && n.user_id === viewer.id);
+          if (!n) fail(404, "Notification not found");
+          n.read_at ??= stamp();
+          commit();
+        }),
+      markAllRead: () =>
+        run(() => {
+          const viewer = requireUser();
+          for (const n of load().notifications) if (n.user_id === viewer.id && !n.read_at) n.read_at = stamp();
+          commit();
+        }),
+    },
+
+    capabilities: { verification: true, notifications: true, publicData: true },
 
     media: {
       upload: async (complaintId, file, mediaType = "initial") => {

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Map as MapIcon, Megaphone } from "lucide-react";
+import { ArrowRight, CircleCheck, ClipboardList, HandHeart, Map as MapIcon, Megaphone } from "lucide-react";
+import { StatCard } from "./StatCard";
 import { ComplaintListItem } from "@/components/complaints/ComplaintListItem";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
@@ -22,7 +23,13 @@ const actions = [
 export function CitizenHome() {
   const { user } = useAuth();
   const categories = useCategoryMap();
-  const recent = useComplaints({ mine: true, page_size: 3 });
+  const mine = useComplaints({ mine: true, page_size: 100 });
+  const recent = { ...mine, data: mine.data && { ...mine.data, items: mine.data.items.slice(0, 3) } };
+  const impact = mine.data && {
+    filed: mine.data.items.length,
+    fixed: mine.data.items.filter((c) => c.status === "resolved").length,
+    supports: mine.data.items.reduce((s, c) => s + Math.max(c.report_count - 1, 0), 0),
+  };
   const firstName = user?.full_name.split(" ")[0] ?? "";
 
   return (
@@ -55,6 +62,19 @@ export function CitizenHome() {
           </Link>
         ))}
       </div>
+
+      {impact && (
+        <section aria-labelledby="impact-heading">
+          <h2 id="impact-heading" className="sr-only">
+            Your reports at a glance
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Reports filed" value={impact.filed} icon={<ClipboardList size={22} strokeWidth={1.75} />} />
+            <StatCard label="Fixed" value={impact.fixed} tone="success" icon={<CircleCheck size={22} strokeWidth={1.75} />} />
+            <StatCard label="Neighbors who said Me Too" value={impact.supports} tone="accent" icon={<HandHeart size={22} strokeWidth={1.75} />} />
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="recent-reports">
         <div className="mb-3 flex items-end justify-between gap-4">

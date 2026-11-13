@@ -1,7 +1,18 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import type { ApiDeps, PKonekApi } from "./contract";
 import { ApiError, apiErrorFromResponse, networkError } from "./errors";
-import type { Complaint, ComplaintFilters, MediaType, TimelineItem } from "./types";
+import type { Complaint, ComplaintFilters, MediaType, Page, TimelineItem } from "./types";
+
+/** Follows pagination (page_size 100, the backend maximum) up to `maxPages`. */
+export async function allPages<T>(fetchPage: (page: number) => Promise<Page<T>>, maxPages = 20): Promise<T[]> {
+  const items: T[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const result = await fetchPage(page);
+    items.push(...result.items);
+    if (items.length >= result.total || result.items.length === 0) break;
+  }
+  return items;
+}
 
 /** What can be known from the complaint row alone. Newest first. */
 export function timelineFromComplaint(c: Complaint): TimelineItem[] {
@@ -97,7 +108,33 @@ export function createHttpApi(
       },
       myVerifications: async () => [],
     },
-    capabilities: { verification: false },
+    map: {
+      points: async (filters = {}) => {
+        // GET /complaints is staff only. TODO(backend): a public, anonymized list for the community map.
+        try {
+          return await allPages((page) => api.get("/complaints", { params: clean({ ...filters, page, page_size: 100 }) }).then((r) => r.data));
+        } catch (error) {
+          if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+            throw new ApiError({ status: 501, kind: "not_implemented", message: "The community map needs a public complaints list on the server." });
+          }
+          throw error;
+        }
+      },
+    },
+    publicReport: {
+      summary: async () => {
+        // TODO(backend): person4 GET /api/public/accountability/departments once the schema is shared.
+        throw new ApiError({ status: 501, kind: "not_implemented", message: "The public report isn't connected to the server yet." });
+      },
+    },
+    notifications: {
+      // TODO(backend): person4 /api/notifications runs on db/schema.sql and isn't reachable through /api yet.
+      list: async (params) => ({ items: [], total: 0, page: params?.page ?? 1, page_size: params?.page_size ?? 20 }),
+      unreadCount: async () => 0,
+      markRead: async () => {},
+      markAllRead: async () => {},
+    },
+    capabilities: { verification: false, notifications: false, publicData: false },
     users: {
       list: async (params) => (await api.get("/users", { params: clean(params) })).data,
       get: async (id) => (await api.get(`/users/${id}`)).data,

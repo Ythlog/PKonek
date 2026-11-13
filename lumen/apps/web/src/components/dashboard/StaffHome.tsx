@@ -15,7 +15,10 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { homePathFor } from "@/lib/auth/routes";
 import { formatNumber, greeting } from "@/lib/format";
 import { useCategoryMap, useComplaints } from "@/lib/queries";
+import { ChartColumn } from "lucide-react";
 import { StatCard } from "./StatCard";
+import { CategoryBars, TrendChart } from "@/components/analytics/charts";
+import { byCategory, dailyTrend } from "@/lib/analytics";
 
 export function summarize(items: ComplaintStaff[]) {
   const count = (status: ComplaintStaff["status"]) => items.filter((c) => c.status === status).length;
@@ -70,6 +73,26 @@ export function StaffHome({ role }: { role: "official" | "pasig_admin" }) {
         <StatCard label="Resolved" value={stats?.resolved} loading={loading} tone="success" icon={<CircleCheck size={22} strokeWidth={1.75} />} hint="Closed as fixed" />
         <StatCard label="Me Too supports" value={stats ? formatNumber(stats.supports) : undefined} loading={loading} tone="accent" icon={<HandHeart size={22} strokeWidth={1.75} />} hint="Residents backing existing reports" />
       </div>
+
+      {complaints.data && (
+        <section aria-labelledby="trends-heading" className="grid gap-3">
+          <div className="flex items-end justify-between gap-4">
+            <h2 id="trends-heading" className="text-xl">
+              Trends
+            </h2>
+            {role === "pasig_admin" && (
+              <Link href={`${base}/analytics`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700">
+                <ChartColumn aria-hidden size={16} strokeWidth={1.75} />
+                Full analytics
+              </Link>
+            )}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <TrendChart data={dailyTrend(complaints.data.items, 30)} days={30} />
+            <CategoryBars data={byCategory(complaints.data.items, categories)} />
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="needs-attention">
         <div className="mb-3 flex items-end justify-between gap-4">

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/shell/ComingSoon";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 export const metadata: Metadata = { title: "Notifications" };
 
 export default function AdminNotificationsPage() {
-  return <ComingSoon title="Notifications" description="Escalations, overdue complaints and account activity." />;
+  return <NotificationCenter />;
 }

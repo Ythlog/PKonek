@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { citizenNav, isActive } from "@/lib/nav";
 import { SkipLink } from "./SkipLink";
 import { UserMenu } from "./UserMenu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const report = citizenNav.find((i) => i.href === "/app/report")!;
 const desktopLinks = citizenNav.filter((i) => i !== report);
@@ -64,6 +65,7 @@ export function CitizenShell({ children }: { children: ReactNode }) {
               <Plus aria-hidden size={18} strokeWidth={2} />
               {report.label}
             </Link>
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>

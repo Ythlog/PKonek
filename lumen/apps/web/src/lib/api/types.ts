@@ -262,6 +262,46 @@ export type Verification = {
   created_at: string;
 };
 
+// ---------- Notifications ----------
+/** Same shape as person4 NotificationItem. */
+export type NotificationType =
+  | "STATUS_CHANGED"
+  | "OFFICIAL_RESPONSE"
+  | "VERIFICATION_REQUESTED"
+  | "COMPLAINT_REOPENED"
+  | "COMPLAINT_RESOLVED"
+  | "NEW_COMPLAINT"
+  | "SUPPORT_ADDED";
+
+export type Notification = {
+  id: number;
+  user_id: number;
+  complaint_id: number | null;
+  notification_type: NotificationType;
+  title: string;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+// ---------- Public accountability ----------
+/** Aggregates only; never reporter details. */
+export type PublicGroupStat = { key: string; label: string; total: number; resolved: number; active: number; resolution_rate: number; median_resolution_hours: number | null };
+
+export type PublicSummary = {
+  generated_at: string;
+  total: number;
+  active: number;
+  resolved: number;
+  rejected: number;
+  supports: number;
+  resolution_rate: number;
+  median_resolution_hours: number | null;
+  by_barangay: PublicGroupStat[];
+  by_category: PublicGroupStat[];
+  recently_resolved: Array<{ id: number; reference_no: string; title: string; barangay: string | null; category_id: number; resolved_at: string; hours_to_resolve: number }>;
+};
+
 // ---------- Media (media_backend) ----------
 /** Citizens upload "initial" evidence to their own complaint; staff upload "progress" or "other". */
 export type MediaType = "initial" | "progress" | "other";

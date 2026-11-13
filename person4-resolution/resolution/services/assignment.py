@@ -24,7 +24,12 @@ def claim_complaint(connection: Connection, user: CurrentUser, complaint_id: int
     complaint = lock_complaint(connection, complaint_id)
     if complaint is None:
         raise _http(404, "Complaint not found", "COMPLAINT_NOT_FOUND")
-    if not _allowed_official(user, complaint):
+    unassigned_routed_here = (
+        complaint["assigned_department_id"] is None and complaint["assigned_official_id"] is None
+        and user.department_id is not None
+        and auto_department(connection, complaint["category_id"]) == user.department_id
+    )
+    if not (_allowed_official(user, complaint) or unassigned_routed_here):
         raise _http(403, "Complaint is outside your department and assignment", "FORBIDDEN_COMPLAINT")
     try:
         validate_transition(complaint["status_code"], "under_review", Actor.OFFICIAL)

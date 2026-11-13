@@ -14,7 +14,7 @@ def daily_trends(connection: Connection, from_date: date, to_date: date) -> list
         (SELECT COUNT(*) FROM complaint_status_history h JOIN complaint_statuses s ON s.id=h.new_status_id
           WHERE s.code='reopened' AND DATE(h.created_at)=calendar.day) AS reopened
       FROM (
-        SELECT DATE_ADD(:from_date, INTERVAL seq DAY) AS day
+        SELECT DATE_ADD(CAST(:from_date AS DATE), INTERVAL seq DAY) AS day
         FROM (SELECT a.n + 10*b.n + 100*c.n AS seq FROM
           (SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
            UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) a
@@ -22,7 +22,7 @@ def daily_trends(connection: Connection, from_date: date, to_date: date) -> list
            UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) b
           CROSS JOIN (SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
            UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) c
-        ) sequence_days WHERE DATE_ADD(:from_date, INTERVAL seq DAY)<=:to_date
+        ) sequence_days WHERE DATE_ADD(CAST(:from_date AS DATE), INTERVAL seq DAY)<=CAST(:to_date AS DATE)
       ) calendar ORDER BY calendar.day
     """),{"from_date":from_date,"to_date":to_date}).mappings().all()
     return [{"date":row["date"].isoformat(),"submitted":int(row["submitted"]),

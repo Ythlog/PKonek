@@ -27,8 +27,8 @@ def response_seed(mysql_test_engine):
     yield
     with mysql_test_engine.begin() as conn:
         conn.execute(text("DELETE FROM notifications WHERE complaint_id IN (981,982)"))
-        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint_response' AND entity_id IN "
-                          "(SELECT CAST(id AS CHAR) FROM complaint_responses WHERE complaint_id IN (981,982))"))
+        conn.execute(text("DELETE FROM audit_logs WHERE entity_type='complaint_response' AND CAST(entity_id AS UNSIGNED) IN "
+                          "(SELECT id FROM complaint_responses WHERE complaint_id IN (981,982))"))
         conn.execute(text("DELETE FROM complaint_responses WHERE complaint_id IN (981,982)"))
         conn.execute(text("DELETE FROM complaint_support WHERE complaint_id=981"))
         conn.execute(text("DELETE FROM complaints WHERE id IN (981,982)"))

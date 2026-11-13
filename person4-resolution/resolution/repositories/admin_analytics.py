@@ -42,9 +42,9 @@ def grouped_counts(connection: Connection, group: str, department_id: int | None
                  WHERE (:department_id IS NULL OR c.assigned_department_id=:department_id)
                  GROUP BY st.id,st.code,st.label ORDER BY st.sort_order"""
     elif group == "category":
-        query="""SELECT CAST(cat.id AS CHAR) AS key_name,cat.name AS label,COUNT(c.id) AS count
-                 FROM complaint_categories cat LEFT JOIN complaints c ON c.category_id=cat.id
-                   AND (:department_id IS NULL OR c.assigned_department_id=:department_id)
+        query="""SELECT CAST(cat.id AS CHAR) AS key_name,cat.name AS label,COUNT(*) AS count
+                 FROM complaints c JOIN complaint_categories cat ON cat.id=c.category_id
+                 WHERE (:department_id IS NULL OR c.assigned_department_id=:department_id)
                  GROUP BY cat.id,cat.name ORDER BY cat.name"""
     elif group == "severity":
         query="""SELECT COALESCE(c.ai_severity,'unclassified') AS key_name,

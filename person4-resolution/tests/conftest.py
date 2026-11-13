@@ -31,7 +31,9 @@ def mysql_test_engine():
         pytest.skip(f"MySQL is not reachable at {host}:{port}")
     admin = create_engine(admin_url, isolation_level="AUTOCOMMIT", connect_args={"connect_timeout": 2})
     with admin.connect() as connection:
-        connection.execute(text("CREATE DATABASE IF NOT EXISTS pkonek_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
+        # Start from an empty scratch database so the snapshot's seed rows load cleanly on every run.
+        connection.execute(text("DROP DATABASE IF EXISTS pkonek_test"))
+        connection.execute(text("CREATE DATABASE pkonek_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
     database_url = admin_url.set(database="pkonek_test")
     engine = create_engine(database_url, pool_pre_ping=True)
     with engine.connect() as connection:

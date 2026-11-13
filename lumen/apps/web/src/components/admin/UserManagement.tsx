@@ -188,7 +188,8 @@ function UserDialog({ user, isSelf, onClose }: { user: User | null; isSelf: bool
     <Modal
       open
       onClose={onClose}
-      title={creating ? "Add a staff account" : `Edit ${user!.full_name}`}
+      // Names keep their own casing, so the fragment skips Title Case ("Juan dela Cruz").
+      title={creating ? "Add a staff account" : <>Edit {user!.full_name}</>}
       description={creating ? "They sign in at the staff sign-in page with this email and password." : user!.email}
       footer={
         <>

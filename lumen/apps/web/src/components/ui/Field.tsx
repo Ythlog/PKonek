@@ -3,6 +3,7 @@
 import { createContext, useContext, useId, type AriaAttributes, type ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 type FieldContextValue = {
   id: string;
@@ -64,7 +65,7 @@ export function Field({ label, helper, error, required = false, hint, className,
       <div className={cn("flex flex-col gap-1.5", className)}>
         <div className="flex items-baseline justify-between gap-3">
           <label htmlFor={id} className="text-sm font-semibold text-ink">
-            {label}
+            {titleCaseChildren(label)}
             {required && (
               <span aria-hidden className="ml-0.5 text-danger">
                 *

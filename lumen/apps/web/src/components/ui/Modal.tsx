@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 type DialogProps = {
   open: boolean;
@@ -59,7 +60,7 @@ function DialogHeader({ titleId, descId, title, description, onClose }: {
     <div className="flex items-start gap-4 border-b border-border px-6 py-4">
       <div className="min-w-0 flex-1">
         <h2 id={titleId} className="text-xl">
-          {title}
+          {titleCaseChildren(title)}
         </h2>
         {description && (
           <p id={descId} className="mt-1 text-sm text-muted">

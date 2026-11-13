@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 export type TabItem = { id: string; label: ReactNode; content: ReactNode; count?: number };
 
@@ -75,7 +76,7 @@ export function Tabs({ label, items, value, defaultValue, onValueChange, classNa
                   : "border-transparent text-muted hover:border-border hover:text-ink",
               )}
             >
-              {item.label}
+              {titleCaseChildren(item.label)}
               {item.count !== undefined && (
                 <span
                   className={cn(

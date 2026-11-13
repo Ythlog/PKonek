@@ -33,7 +33,7 @@ describe("/styleguide", () => {
 
   it("shows a demo for every shared component", () => {
     renderPage();
-    const section = screen.getByRole("region", { name: "Components" });
+    const section = screen.getByRole("region", { name: /^Components$/i });
     for (const name of galleryComponents) {
       expect(within(section).getByRole("heading", { level: 3, name })).toBeInTheDocument();
     }

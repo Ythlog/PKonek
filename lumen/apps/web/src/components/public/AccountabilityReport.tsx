@@ -17,6 +17,7 @@ import type { PublicGroupStat } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { useCategoryMap } from "@/lib/queries";
+import { titleCase } from "@/lib/text";
 
 type SortKey = "total" | "resolution_rate" | "median_resolution_hours";
 
@@ -54,7 +55,7 @@ function GroupTable({ title, description, rows, nameHeader, icon }: { title: str
   return (
     <Card padding="none" className="overflow-hidden">
       <div className="px-5 pt-5">
-        <h2 className="text-xl">{title}</h2>
+        <h2 className="text-xl">{titleCase(title)}</h2>
         <p className="mt-0.5 text-sm text-muted">{description}</p>
       </div>
       <div className="mt-3 overflow-x-auto">
@@ -103,7 +104,7 @@ export function AccountabilityReport() {
         <div aria-hidden className="absolute -right-32 -top-24 -z-10 size-96 rounded-full bg-brand-600/50 blur-3xl" />
         <div className="mx-auto max-w-content px-4 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-eyebrow text-accent">Public accountability report</p>
-          <h1 className="mt-3 max-w-3xl text-3xl text-white sm:text-4xl">How Pasig City responds to residents</h1>
+          <h1 className="mt-3 max-w-3xl text-3xl text-white sm:text-4xl">How Pasig City Responds to Residents</h1>
           <p className="mt-4 max-w-2xl text-lg text-brand-50">
             Every report filed on PKonek counts here: how many came in, how many were fixed, and how long it took, by barangay and by category.
           </p>
@@ -149,7 +150,7 @@ export function AccountabilityReport() {
 
             <section aria-labelledby="recent-fixes" className="grid gap-3">
               <h2 id="recent-fixes" className="text-xl">
-                Recently fixed
+                Recently Fixed
               </h2>
               {s.recently_resolved.length === 0 ? (
                 <Card>
@@ -179,12 +180,12 @@ export function AccountabilityReport() {
 
         <section className="mb-16 flex flex-col items-start gap-6 rounded-panel bg-cream p-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl">See a problem in your barangay?</h2>
+            <h2 className="text-2xl">See a Problem in Your Barangay?</h2>
             <p className="mt-1 text-muted">Every report helps the city see where to act first.</p>
           </div>
           <Link href="/app/report" className={buttonClasses({ size: "lg" })}>
             <Megaphone aria-hidden size={20} strokeWidth={1.75} />
-            Report an issue
+            Report an Issue
           </Link>
         </section>
       </div>

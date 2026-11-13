@@ -28,15 +28,15 @@ const steps = [
 ];
 
 const features = [
-  { icon: HandHeart, title: "Me Too, not duplicates", text: "If someone already reported it nearby, add your support instead. Officials see what matters most." },
-  { icon: MapPin, title: "Hotspot maps", text: "Clusters of reports show where the city needs to act first." },
-  { icon: ChartColumn, title: "Public accountability", text: "Resolution rates by barangay and category are open for everyone to see." },
+  { icon: HandHeart, title: "Me Too, Not Duplicates", text: "If someone already reported it nearby, add your support instead. Officials see what matters most." },
+  { icon: MapPin, title: "Hotspot Maps", text: "Clusters of reports show where the city needs to act first." },
+  { icon: ChartColumn, title: "Public Accountability", text: "Resolution rates by barangay and category are open for everyone to see." },
 ];
 
 const audiences = [
-  { icon: UserRound, title: "Residents", text: "Report issues, follow progress and confirm fixes.", href: CITIZEN_REGISTER, cta: "Create a free account" },
-  { icon: Building2, title: "Barangay officials", text: "Review complaints in your barangay and post updates.", href: STAFF_LOGIN, cta: "Staff sign in" },
-  { icon: Landmark, title: "Pasig City Hall", text: "Monitor the whole city, manage accounts and track performance.", href: STAFF_LOGIN, cta: "Administrator sign in" },
+  { icon: UserRound, title: "Residents", text: "Report issues, follow progress and confirm fixes.", href: CITIZEN_REGISTER, cta: "Create a Free Account" },
+  { icon: Building2, title: "Barangay Officials", text: "Review complaints in your barangay and post updates.", href: STAFF_LOGIN, cta: "Staff Sign In" },
+  { icon: Landmark, title: "Pasig City Hall", text: "Monitor the whole city, manage accounts and track performance.", href: STAFF_LOGIN, cta: "Administrator Sign In" },
 ];
 
 const timeline = [
@@ -93,17 +93,17 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-content items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-eyebrow text-accent">Civic reporting for Pasig City</p>
-              <h1 className="mt-4 text-4xl leading-tight text-white">Report it. Track it. See it fixed.</h1>
+              <h1 className="mt-4 text-4xl leading-tight text-white">Report It. Track It. See It Fixed.</h1>
               <p className="mt-5 max-w-xl text-lg text-brand-50">
                 PKonek connects residents with their barangay and City Hall, from the first report to a fix you confirm yourself.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href="/app/report" className={buttonClasses({ variant: "accent", size: "lg" })}>
                   <Megaphone aria-hidden size={20} strokeWidth={1.75} />
-                  Report an issue
+                  Report an Issue
                 </Link>
                 <Link href={CITIZEN_REGISTER} className={buttonClasses({ size: "lg", className: "border border-white/30 bg-transparent hover:bg-white/10" })}>
-                  Create a free account
+                  Create a Free Account
                   <ArrowRight aria-hidden size={20} strokeWidth={1.75} />
                 </Link>
               </div>
@@ -120,7 +120,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-content px-4 sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-brand-600">How it works</p>
             <h2 id="how-heading" className="mt-2 max-w-2xl text-3xl">
-              Three steps from problem to fix
+              Three Steps From Problem to Fix
             </h2>
             <ol className="mt-10 grid gap-6 md:grid-cols-3">
               {steps.map((s, i) => (
@@ -144,7 +144,7 @@ export default function LandingPage() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-eyebrow text-brand-600">Why PKonek</p>
               <h2 id="features-heading" className="mt-2 text-3xl">
-                Built so every report counts
+                Built So Every Report Counts
               </h2>
             </div>
             <ul className="grid gap-6 sm:grid-cols-3">
@@ -164,7 +164,7 @@ export default function LandingPage() {
         <section aria-labelledby="audience-heading" className="py-16 sm:py-24">
           <div className="mx-auto max-w-content px-4 sm:px-6">
             <h2 id="audience-heading" className="text-3xl">
-              One platform for the whole city
+              One Platform for the Whole City
             </h2>
             <ul className="mt-10 grid gap-6 md:grid-cols-3">
               {audiences.map((a) => (
@@ -187,11 +187,11 @@ export default function LandingPage() {
         <section className="px-4 pb-16 sm:px-6 sm:pb-24">
           <div className="mx-auto flex max-w-content flex-col items-start gap-6 rounded-panel bg-brand-700 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-12">
             <div>
-              <h2 className="text-2xl text-white sm:text-3xl">Seen something that needs fixing?</h2>
+              <h2 className="text-2xl text-white sm:text-3xl">Seen Something That Needs Fixing?</h2>
               <p className="mt-2 text-brand-50">It takes about a minute, and your barangay sees it right away.</p>
             </div>
             <Link href="/app/report" className={buttonClasses({ variant: "accent", size: "lg" })}>
-              Report an issue
+              Report an Issue
             </Link>
           </div>
         </section>

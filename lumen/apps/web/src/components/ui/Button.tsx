@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 import { Spinner } from "./Spinner";
 
 export type ButtonVariant = "primary" | "accent" | "secondary" | "ghost" | "danger";
@@ -65,7 +66,7 @@ export function Button({
       {...rest}
     >
       {loading ? <Spinner size="sm" /> : leadingIcon}
-      {children}
+      {titleCaseChildren(children)}
       {!loading && trailingIcon}
     </button>
   );

@@ -16,8 +16,8 @@ import { greeting } from "@/lib/format";
 import { useCategoryMap, useComplaints } from "@/lib/queries";
 
 const actions = [
-  { href: "/app/reports", title: "My reports", text: "Follow the status of everything you reported.", icon: ClipboardList },
-  { href: "/app/map", title: "Community map", text: "See what neighbors reported and add your Me Too.", icon: MapIcon },
+  { href: "/app/reports", title: "My Reports", text: "Follow the status of everything you reported.", icon: ClipboardList },
+  { href: "/app/map", title: "Community Map", text: "See what neighbors reported and add your Me Too.", icon: MapIcon },
 ];
 
 export function CitizenHome() {
@@ -66,7 +66,7 @@ export function CitizenHome() {
       {impact && (
         <section aria-labelledby="impact-heading">
           <h2 id="impact-heading" className="sr-only">
-            Your reports at a glance
+            Your Reports at a Glance
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard label="Reports filed" value={impact.filed} icon={<ClipboardList size={22} strokeWidth={1.75} />} />
@@ -79,10 +79,10 @@ export function CitizenHome() {
       <section aria-labelledby="recent-reports">
         <div className="mb-3 flex items-end justify-between gap-4">
           <h2 id="recent-reports" className="text-xl">
-            Your recent reports
+            Your Recent Reports
           </h2>
           <Link href="/app/reports" className="text-sm font-semibold text-brand-600 hover:text-brand-700">
-            View all
+            View All
           </Link>
         </div>
         <Card padding="none">
@@ -110,7 +110,7 @@ export function CitizenHome() {
               description="When you report an issue, you can follow its progress here."
               action={
                 <Link href="/app/report" className={buttonClasses()}>
-                  Report an issue
+                  Report an Issue
                 </Link>
               }
             />

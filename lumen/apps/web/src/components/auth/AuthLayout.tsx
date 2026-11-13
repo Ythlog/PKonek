@@ -3,13 +3,14 @@ import Link from "next/link";
 import { BellRing, Building2, ChartColumn, ClipboardCheck, MapPin, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { DemoModePill } from "@/components/DemoModePill";
+import { titleCase } from "@/lib/text";
 
 type Audience = "citizen" | "staff";
 
 const panelCopy: Record<Audience, { eyebrow: string; headline: string; points: Array<{ icon: typeof MapPin; text: string }> }> = {
   citizen: {
     eyebrow: "For Pasig City residents",
-    headline: "Report it. Track it. See it fixed.",
+    headline: "Report It. Track It. See It Fixed.",
     points: [
       { icon: MapPin, text: "Pin the exact spot and add a photo in under a minute." },
       { icon: BellRing, text: "Get updates as your barangay works on it." },
@@ -18,7 +19,7 @@ const panelCopy: Record<Audience, { eyebrow: string; headline: string; points: A
   },
   staff: {
     eyebrow: "For barangay and city staff",
-    headline: "Every report, one clear workspace.",
+    headline: "Every Report, One Clear Workspace.",
     points: [
       { icon: Building2, text: "See and act on the complaints in your barangay." },
       { icon: ChartColumn, text: "Spot hotspots and trends before they grow." },
@@ -80,7 +81,7 @@ export function AuthLayout({ audience, title, description, children, footer }: A
       <main id="main" className="flex flex-col items-center px-4 py-8 sm:px-6 sm:py-12 lg:justify-center lg:py-16">
         <div className="w-full max-w-md">
           <p className="text-xs font-semibold uppercase tracking-eyebrow text-brand-600 lg:hidden">{copy.eyebrow}</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl">{title}</h1>
+          <h1 className="mt-1 text-2xl sm:text-3xl">{titleCase(title)}</h1>
           {description && <p className="mt-2 text-muted">{description}</p>}
 
           <div className="mt-6 rounded-panel border border-border bg-surface p-5 shadow-card sm:p-8">{children}</div>

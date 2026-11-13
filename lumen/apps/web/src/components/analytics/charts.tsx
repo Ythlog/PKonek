@@ -8,6 +8,7 @@ import type { DayCount, GroupStat, StatusCount } from "@/lib/analytics";
 import { percent } from "@/lib/analytics";
 import type { ComplaintStatus } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 /** Chart colors read the design tokens through CSS variables. */
 const STATUS_COLOR: Record<ComplaintStatus, string> = {
@@ -29,7 +30,7 @@ const tooltipStyle = {
 export function ChartCard({ title, summary, children, className, height = "h-64" }: { title: string; summary: string; children: ReactNode; className?: string; height?: string }) {
   return (
     <Card className={cn("flex flex-col", className)}>
-      <h3 className="text-lg">{title}</h3>
+      <h3 className="text-lg">{titleCaseChildren(title)}</h3>
       <p className="mt-0.5 text-sm text-muted">{summary}</p>
       <div aria-hidden className={cn("mt-4 w-full", height)}>
         <ResponsiveContainer width="100%" height="100%">
@@ -110,7 +111,7 @@ export function BarangayTable({ data, title = "By barangay" }: { data: GroupStat
   return (
     <Card padding="none" className="overflow-hidden">
       <div className="px-5 pt-5">
-        <h3 className="text-lg">{title}</h3>
+        <h3 className="text-lg">{titleCaseChildren(title)}</h3>
         <p className="mt-0.5 text-sm text-muted">Resolution rate is resolved complaints out of all complaints.</p>
       </div>
       <div className="mt-3 max-h-96 overflow-auto">

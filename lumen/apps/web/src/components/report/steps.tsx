@@ -15,6 +15,7 @@ import type { Category, Pin } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { BARANGAY_NAMES } from "@/lib/pasig";
 import { DESCRIPTION_MAX, TITLE_MAX, formatFileSize, photoProblem, type ReportDraft, type ReportStepId } from "@/lib/report";
+import { titleCase } from "@/lib/text";
 
 export function StepHeading({ id, title, description }: { id: string; title: string; description: ReactNode }) {
   const ref = useRef<HTMLHeadingElement>(null);
@@ -25,7 +26,7 @@ export function StepHeading({ id, title, description }: { id: string; title: str
   return (
     <div>
       <h2 ref={ref} id={id} tabIndex={-1} className="text-xl outline-none sm:text-2xl">
-        {title}
+        {titleCase(title)}
       </h2>
       <p className="mt-1 text-muted">{description}</p>
     </div>

@@ -126,7 +126,7 @@ function BackLink() {
   return (
     <Link href="/app/reports" className="inline-flex w-fit min-h-touch items-center gap-2 rounded-control text-sm font-semibold text-brand-600 hover:text-brand-700">
       <ArrowLeft aria-hidden size={16} strokeWidth={1.75} />
-      My reports
+      My Reports
     </Link>
   );
 }
@@ -201,7 +201,7 @@ function VerifyCard({ complaint }: { complaint: Complaint }) {
         </span>
         <div>
           <h2 id="verify-heading" className="text-lg text-ink">
-            Is it really fixed?
+            Is It Really Fixed?
           </h2>
           <p className="mt-0.5 text-sm text-ink">
             Your barangay marked this as fixed{complaint.resolved_at ? ` on ${formatDateTime(complaint.resolved_at)}` : ""}. Check the spot, then let them know.

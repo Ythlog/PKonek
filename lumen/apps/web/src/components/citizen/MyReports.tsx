@@ -20,10 +20,10 @@ import { ReferenceLookup } from "./ReferenceLookup";
 type Tab = "all" | ReportGroup;
 
 const emptyCopy: Record<Tab, { title: string; text: string }> = {
-  all: { title: "No reports yet", text: "When you report an issue, you can follow it here from the first update to the fix." },
-  needs_you: { title: "Nothing to confirm", text: "When a barangay marks one of your reports as fixed, you'll confirm it here." },
-  active: { title: "No open reports", text: "Everything you reported has been closed." },
-  closed: { title: "No closed reports yet", text: "Fixed and closed reports will appear here." },
+  all: { title: "No Reports Yet", text: "When you report an issue, you can follow it here from the first update to the fix." },
+  needs_you: { title: "Nothing to Confirm", text: "When a barangay marks one of your reports as fixed, you'll confirm it here." },
+  active: { title: "No Open Reports", text: "Everything you reported has been closed." },
+  closed: { title: "No Closed Reports Yet", text: "Fixed and closed reports will appear here." },
 };
 
 export function MyReports() {
@@ -52,7 +52,7 @@ export function MyReports() {
           action={
             which === "all" ? (
               <Link href="/app/report" className={buttonClasses()}>
-                Report an issue
+                Report an Issue
               </Link>
             ) : undefined
           }
@@ -85,7 +85,7 @@ export function MyReports() {
         actions={
           <Link href="/app/report" className={buttonClasses()}>
             <Plus aria-hidden size={18} strokeWidth={2} />
-            Report an issue
+            Report an Issue
           </Link>
         }
       />
@@ -132,7 +132,7 @@ export function MyReports() {
             <BellRing size={20} strokeWidth={1.75} />
           </span>
           <div className="flex-1">
-            <h2 className="text-lg">Track any report</h2>
+            <h2 className="text-lg">Track Any Report</h2>
             <p className="mt-0.5 text-sm text-muted">Have a reference number from a neighbor or a printout? Look it up here.</p>
             <div className="mt-4">
               <ReferenceLookup />

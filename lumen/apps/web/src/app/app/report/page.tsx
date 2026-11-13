@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ReportWizard } from "@/components/report/ReportWizard";
 import { PageHeader } from "@/components/shell/PageHeader";
 
-export const metadata: Metadata = { title: "Report an issue" };
+export const metadata: Metadata = { title: "Report an Issue" };
 
 export default function ReportPage() {
   return (

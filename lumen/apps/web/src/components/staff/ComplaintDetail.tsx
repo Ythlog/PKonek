@@ -20,13 +20,14 @@ import { ALLOWED_TRANSITIONS, type Category, type ComplaintStaff, type Complaint
 import { formatDateTime } from "@/lib/format";
 import { queryKeys, useComplaint, useTimeline } from "@/lib/queries";
 import { photoProblem } from "@/lib/report";
+import { titleCase } from "@/lib/text";
 
 const UPDATE_MAX = 2000;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="grid gap-3">
-      <h3 className="text-sm font-semibold uppercase tracking-eyebrow text-muted">{title}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-eyebrow text-muted">{titleCase(title)}</h3>
       {children}
     </section>
   );
@@ -84,7 +85,7 @@ export function ComplaintDetail({ id, categories }: { id: number; categories: Ma
             <dd className="text-ink">{c.address_text ?? (c.barangay ? `Barangay ${c.barangay}` : "No address given")}</dd>
             <dd>
               <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-700">
-                Open in map <ExternalLink aria-hidden size={12} />
+                Open in Map <ExternalLink aria-hidden size={12} />
                 <span className="sr-only">(opens in a new tab)</span>
               </a>
             </dd>

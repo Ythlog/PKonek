@@ -56,7 +56,7 @@ export function StaffHome({ role }: { role: "official" | "pasig_admin" }) {
         actions={
           <Link href={`${base}/complaints`} className={buttonClasses()}>
             <ListChecks aria-hidden size={18} strokeWidth={1.75} />
-            Open complaints list
+            Open Complaints List
           </Link>
         }
       />
@@ -83,7 +83,7 @@ export function StaffHome({ role }: { role: "official" | "pasig_admin" }) {
             {role === "pasig_admin" && (
               <Link href={`${base}/analytics`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700">
                 <ChartColumn aria-hidden size={16} strokeWidth={1.75} />
-                Full analytics
+                Full Analytics
               </Link>
             )}
           </div>
@@ -98,12 +98,12 @@ export function StaffHome({ role }: { role: "official" | "pasig_admin" }) {
         <div className="mb-3 flex items-end justify-between gap-4">
           <div>
             <h2 id="needs-attention" className="text-xl">
-              Needs attention
+              Needs Attention
             </h2>
             <p className="text-sm text-muted">Active complaints with the most community support.</p>
           </div>
           <Link href={`${base}/complaints`} className="text-sm font-semibold text-brand-600 hover:text-brand-700">
-            View all
+            View All
           </Link>
         </div>
         <Card padding="none">

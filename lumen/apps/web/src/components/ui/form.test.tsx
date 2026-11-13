@@ -63,7 +63,7 @@ describe("Field", () => {
         <Input />
       </Field>,
     );
-    expect(screen.getByLabelText("Title")).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByLabelText(/^Title$/i)).not.toHaveAttribute("aria-invalid");
   });
 
   it("works with Select and Textarea", () => {
@@ -79,8 +79,8 @@ describe("Field", () => {
         </Field>
       </>,
     );
-    expect(screen.getByLabelText("Category")).toHaveDisplayValue("Choose one");
-    expect(screen.getByLabelText("Description")).toHaveAccessibleDescription(/be specific/i);
+    expect(screen.getByLabelText(/^Category$/i)).toHaveDisplayValue("Choose one");
+    expect(screen.getByLabelText(/^Description$/i)).toHaveAccessibleDescription(/be specific/i);
     expect(screen.getByText("5 / 100")).toBeInTheDocument();
   });
 });
@@ -88,7 +88,7 @@ describe("Field", () => {
 describe("Textarea count", () => {
   it("updates while typing", async () => {
     render(<Textarea aria-label="Notes" maxLength={20} showCount />);
-    await userEvent.type(screen.getByLabelText("Notes"), "Flooded");
+    await userEvent.type(screen.getByLabelText(/^Notes$/i), "Flooded");
     expect(screen.getByText("7 / 20")).toBeInTheDocument();
   });
 });
@@ -96,9 +96,9 @@ describe("Textarea count", () => {
 describe("Checkbox", () => {
   it("has a clickable label and a description", async () => {
     render(<Checkbox label="Keep me signed in" description="On this device only" />);
-    const box = screen.getByRole("checkbox", { name: "Keep me signed in" });
+    const box = screen.getByRole("checkbox", { name: /^Keep me signed in$/i });
     expect(box).toHaveAccessibleDescription("On this device only");
-    await userEvent.click(screen.getByText("Keep me signed in"));
+    await userEvent.click(screen.getByText(/^Keep me signed in$/i));
     expect(box).toBeChecked();
   });
 });

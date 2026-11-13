@@ -5,7 +5,7 @@ const hrefs = (role: Parameters<typeof navFor>[0]) => navFor(role).map((i) => i.
 
 describe("navigation by role", () => {
   it("gives residents the four tab-bar destinations", () => {
-    expect(citizenNav.map((i) => i.short ?? i.label)).toEqual(["Home", "Report", "My reports", "Map"]);
+    expect(citizenNav.map((i) => i.short ?? i.label)).toEqual(["Home", "Report", "My Reports", "Map"]);
     expect(hrefs("citizen").every((h) => h.startsWith("/app"))).toBe(true);
   });
 

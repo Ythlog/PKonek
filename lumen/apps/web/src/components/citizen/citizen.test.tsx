@@ -69,29 +69,29 @@ describe("MyReports", () => {
     await u.click(screen.getByRole("tab", { name: /needs you/i }));
     const panel = screen.getByRole("tabpanel");
     expect(within(panel).getByText(streetlights.title)).toBeInTheDocument();
-    expect(within(panel).getByText("Awaiting verification")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Awaiting verification$/i)).toBeInTheDocument();
     expect(within(panel).getByRole("link")).toHaveAttribute("href", `/app/reports/${streetlights.id}`);
   });
 
   it("finds a report by reference number", async () => {
     const u = await renderAs(<MyReports />);
     const lookup = await screen.findByRole("search", { name: /reference number/i });
-    await u.type(within(lookup).getByLabelText("Reference number"), "nope");
-    await u.click(within(lookup).getByRole("button", { name: "Find report" }));
-    expect(within(lookup).getByLabelText("Reference number")).toHaveAccessibleDescription(/PSG-2026-000123/);
+    await u.type(within(lookup).getByLabelText(/^Reference number$/i), "nope");
+    await u.click(within(lookup).getByRole("button", { name: /^Find report$/i }));
+    expect(within(lookup).getByLabelText(/^Reference number$/i)).toHaveAccessibleDescription(/PSG-2026-000123/);
 
-    await u.clear(within(lookup).getByLabelText("Reference number"));
-    await u.type(within(lookup).getByLabelText("Reference number"), neighbors.reference_no.toLowerCase());
-    await u.click(within(lookup).getByRole("button", { name: "Find report" }));
+    await u.clear(within(lookup).getByLabelText(/^Reference number$/i));
+    await u.type(within(lookup).getByLabelText(/^Reference number$/i), neighbors.reference_no.toLowerCase());
+    await u.click(within(lookup).getByRole("button", { name: /^Find report$/i }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith(`/app/reports/${neighbors.id}`));
   });
 
   it("says when a reference doesn't exist", async () => {
     const u = await renderAs(<MyReports />);
     const lookup = await screen.findByRole("search", { name: /reference number/i });
-    await u.type(within(lookup).getByLabelText("Reference number"), "PSG-2026-000999");
-    await u.click(within(lookup).getByRole("button", { name: "Find report" }));
-    await waitFor(() => expect(within(lookup).getByLabelText("Reference number")).toHaveAccessibleDescription(/couldn't find PSG-2026-000999/i));
+    await u.type(within(lookup).getByLabelText(/^Reference number$/i), "PSG-2026-000999");
+    await u.click(within(lookup).getByRole("button", { name: /^Find report$/i }));
+    await waitFor(() => expect(within(lookup).getByLabelText(/^Reference number$/i)).toHaveAccessibleDescription(/couldn't find PSG-2026-000999/i));
   });
 });
 
@@ -99,8 +99,8 @@ describe("ReportDetail", () => {
   it("shows progress, the official's updates and the Me Too count", async () => {
     await renderAs(<ReportDetail id={drain.id} />);
     expect(await screen.findByRole("heading", { level: 1, name: drain.title })).toBeInTheDocument();
-    const progress = screen.getByRole("list", { name: "Progress" });
-    expect(within(progress).getByText("Being worked on").closest("li")).toHaveAttribute("aria-current", "step");
+    const progress = screen.getByRole("list", { name: /^Progress$/i });
+    expect(within(progress).getByText(/^Being worked on$/i).closest("li")).toHaveAttribute("aria-current", "step");
     expect(screen.getByText(`${drain.report_count} people reported this`)).toBeInTheDocument();
     expect(await screen.findByText(/crew is scheduled/i)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /is it really fixed/i })).not.toBeInTheDocument();
@@ -111,29 +111,29 @@ describe("ReportDetail", () => {
     const card = await screen.findByRole("region", { name: /is it really fixed/i });
     await u.click(within(card).getByRole("button", { name: /yes, it.s fixed/i }));
     await u.type(within(card).getByLabelText(/anything to add/i), "Bright again.");
-    await u.click(within(card).getByRole("button", { name: "Confirm the fix" }));
+    await u.click(within(card).getByRole("button", { name: /^Confirm the fix$/i }));
     expect(await screen.findByText(/thanks for confirming the fix/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("region", { name: /is it really fixed/i })).not.toBeInTheDocument());
-    expect(await screen.findByText("Fix confirmed by the resident")).toBeInTheDocument();
-    expect(screen.getByText("Confirmed by you").closest("li")).not.toHaveAttribute("aria-current");
+    expect(await screen.findByText(/^Fix confirmed by the resident$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Confirmed by you$/i).closest("li")).not.toHaveAttribute("aria-current");
   });
 
   it("reopens a fix that didn't hold and requires a reason", async () => {
     const u = await renderAs(<ReportDetail id={streetlights.id} />);
     const card = await screen.findByRole("region", { name: /is it really fixed/i });
     await u.click(within(card).getByRole("button", { name: /no, reopen it/i }));
-    await u.click(within(card).getByRole("button", { name: "Reopen the report" }));
+    await u.click(within(card).getByRole("button", { name: /^Reopen the report$/i }));
     expect(within(card).getByLabelText(/what's still wrong/i)).toHaveAccessibleDescription(/tell the barangay/i);
     await u.type(within(card).getByLabelText(/what's still wrong/i), "Two lights are still out.");
-    await u.click(within(card).getByRole("button", { name: "Reopen the report" }));
-    expect(await screen.findByText("Report reopened")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByText("Reopened").length).toBeGreaterThan(0));
-    expect(await screen.findByText("Two lights are still out.")).toBeInTheDocument();
+    await u.click(within(card).getByRole("button", { name: /^Reopen the report$/i }));
+    expect(await screen.findByText(/^Report reopened$/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(/^Reopened$/i).length).toBeGreaterThan(0));
+    expect(await screen.findByText(/^Two lights are still out\.$/i)).toBeInTheDocument();
   });
 
   it("shows a neighbor's report without verification or private details", async () => {
     await renderAs(<ReportDetail id={neighbors.id} />);
-    expect(await screen.findByText("Reported by a neighbor")).toBeInTheDocument();
+    expect(await screen.findByText(/^Reported by a neighbor$/i)).toBeInTheDocument();
     expect(screen.queryByText(neighbors.reporter_name!)).not.toBeInTheDocument();
   });
 

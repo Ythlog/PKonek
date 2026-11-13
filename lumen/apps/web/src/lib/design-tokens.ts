@@ -74,10 +74,10 @@ export type StatusToken = {
 
 export const statusTokens: StatusToken[] = [
   { status: "open", slug: "open", label: "Open", fg: "#1D4ED8", bg: "#DBEAFE", pill: "bg-status-open-bg text-status-open", dot: "bg-status-open" },
-  { status: "in_progress", slug: "in-progress", label: "In progress", fg: "#B45309", bg: "#FEF3C7", pill: "bg-status-in-progress-bg text-status-in-progress", dot: "bg-status-in-progress" },
+  { status: "in_progress", slug: "in-progress", label: "In Progress", fg: "#B45309", bg: "#FEF3C7", pill: "bg-status-in-progress-bg text-status-in-progress", dot: "bg-status-in-progress" },
   { status: "resolved", slug: "resolved", label: "Resolved", fg: "#15803D", bg: "#DCFCE7", pill: "bg-status-resolved-bg text-status-resolved", dot: "bg-status-resolved" },
   { status: "rejected", slug: "rejected", label: "Rejected", fg: "#B91C1C", bg: "#FEE2E2", pill: "bg-status-rejected-bg text-status-rejected", dot: "bg-status-rejected" },
-  { status: "pending_verification", slug: "pending-verification", label: "Awaiting verification", fg: "#6D28D9", bg: "#EDE9FE", pill: "bg-status-pending-verification-bg text-status-pending-verification", dot: "bg-status-pending-verification", planned: true },
+  { status: "pending_verification", slug: "pending-verification", label: "Awaiting Verification", fg: "#6D28D9", bg: "#EDE9FE", pill: "bg-status-pending-verification-bg text-status-pending-verification", dot: "bg-status-pending-verification", planned: true },
   { status: "reopened", slug: "reopened", label: "Reopened", fg: "#C2410C", bg: "#FFEDD5", pill: "bg-status-reopened-bg text-status-reopened", dot: "bg-status-reopened", planned: true },
 ];
 

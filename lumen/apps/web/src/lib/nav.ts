@@ -28,16 +28,16 @@ export type NavGroup = { label?: string; items: NavItem[] };
 
 export const roleLabel: Record<Role, string> = {
   citizen: "Resident",
-  official: "Barangay official",
-  pasig_admin: "Pasig administrator",
+  official: "Barangay Official",
+  pasig_admin: "Pasig Administrator",
 };
 
 /** Citizen navigation: top bar on desktop, bottom tab bar on mobile. */
 export const citizenNav: NavItem[] = [
   { href: "/app", label: "Home", icon: House, exact: true },
-  { href: "/app/report", label: "Report an issue", short: "Report", icon: Megaphone },
-  { href: "/app/reports", label: "My reports", icon: ClipboardList },
-  { href: "/app/map", label: "Community map", short: "Map", icon: MapIcon },
+  { href: "/app/report", label: "Report an Issue", short: "Report", icon: Megaphone },
+  { href: "/app/reports", label: "My Reports", icon: ClipboardList },
+  { href: "/app/map", label: "Community Map", short: "Map", icon: MapIcon },
 ];
 
 /** Staff navigation for the sidebar. Officials and admins share one shell; admins get more items. */
@@ -47,7 +47,7 @@ export function staffNav(role: "official" | "pasig_admin"): NavGroup[] {
     items: [
       { href: base, label: "Dashboard", icon: LayoutDashboard, exact: true },
       { href: `${base}/complaints`, label: "Complaints", icon: ClipboardList },
-      { href: `${base}/map`, label: "Map monitoring", icon: MapIcon },
+      { href: `${base}/map`, label: "Map Monitoring", icon: MapIcon },
       { href: `${base}/notifications`, label: "Notifications", icon: Bell },
     ],
   };
@@ -60,7 +60,7 @@ export function staffNav(role: "official" | "pasig_admin"): NavGroup[] {
       items: [
         { href: `${base}/users`, label: "Users", icon: Users },
         { href: `${base}/categories`, label: "Categories", icon: FolderTree },
-        { href: `${base}/logs`, label: "Activity and audit logs", icon: ScrollText },
+        { href: `${base}/logs`, label: "Activity and Audit Logs", icon: ScrollText },
       ],
     },
   ];

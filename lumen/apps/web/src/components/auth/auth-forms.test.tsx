@@ -49,7 +49,7 @@ const form = (name: RegExp) => screen.getByRole("form", { name });
 describe("LoginForm (staff)", () => {
   it("shows inline errors and focuses the first problem", async () => {
     renderWithAuth(<LoginForm area="staff" />);
-    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Sign in$/i }));
     const email = screen.getByLabelText(/work email/i);
     expect(email).toHaveAccessibleDescription(/enter your email address/i);
     expect(email).toHaveFocus();
@@ -63,7 +63,7 @@ describe("LoginForm (staff)", () => {
     renderWithAuth(<LoginForm area="staff" />);
     await userEvent.type(screen.getByLabelText(/work email/i), email);
     await userEvent.type(screen.getByLabelText(/^password/i), DEMO_PASSWORD);
-    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith(path));
     expect(await screen.findByText(/welcome back/i)).toBeInTheDocument();
   });
@@ -72,7 +72,7 @@ describe("LoginForm (staff)", () => {
     search = new URLSearchParams({ next: "/admin/users" });
     renderWithAuth(<LoginForm area="staff" />);
     await userEvent.click(screen.getByRole("button", { name: /pasig administrator/i }));
-    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/admin/users"));
   });
 
@@ -80,7 +80,7 @@ describe("LoginForm (staff)", () => {
     search = new URLSearchParams({ next: "https://evil.example" });
     renderWithAuth(<LoginForm area="staff" />);
     await userEvent.click(screen.getByRole("button", { name: /barangay official/i }));
-    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/official"));
   });
 
@@ -88,7 +88,7 @@ describe("LoginForm (staff)", () => {
     renderWithAuth(<LoginForm area="staff" />);
     await userEvent.type(screen.getByLabelText(/work email/i), "official@pkonek.demo");
     await userEvent.type(screen.getByLabelText(/^password/i), "wrong-password");
-    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Incorrect email or password.");
     expect(screen.getByLabelText(/^password/i)).toHaveValue("");
     expect(screen.getByLabelText(/^password/i)).toHaveFocus();
@@ -99,7 +99,7 @@ describe("LoginForm (staff)", () => {
     renderWithAuth(<LoginForm area="staff" />);
     await userEvent.type(screen.getByLabelText(/work email/i), "citizen@pkonek.demo");
     await userEvent.type(screen.getByLabelText(/^password/i), DEMO_PASSWORD);
-    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/staff sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/for barangay and city staff/i);
     expect(within(alert).getByRole("link", { name: /resident sign-in/i })).toHaveAttribute("href", "/login");
@@ -126,7 +126,7 @@ describe("LoginForm (citizen)", () => {
     renderWithAuth(<LoginForm area="citizen" />);
     await userEvent.click(screen.getByRole("button", { name: /citizen/i }));
     expect(screen.getByLabelText(/email address/i)).toHaveValue("citizen@pkonek.demo");
-    await userEvent.click(within(form(/resident sign in/i)).getByRole("button", { name: "Sign in" }));
+    await userEvent.click(within(form(/resident sign in/i)).getByRole("button", { name: /^Sign in$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/app"));
   });
 });
@@ -145,7 +145,7 @@ describe("RegisterForm", () => {
     renderWithAuth(<RegisterForm />);
     await fill();
     await userEvent.click(screen.getByRole("checkbox", { name: /shown publicly/i }));
-    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Create account$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/app"));
     expect(readSession()?.role).toBe("citizen");
     await expect(api.auth.me()).resolves.toMatchObject({ email: "maria@example.com", barangay: "Ugong" });
@@ -154,7 +154,7 @@ describe("RegisterForm", () => {
   it("explains every invalid field and focuses the first one", async () => {
     renderWithAuth(<RegisterForm />);
     await fill({ name: "", password: "short", confirm: "other" });
-    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Create account$/i }));
     expect(screen.getByLabelText(/full name/i)).toHaveFocus();
     expect(screen.getByLabelText(/full name/i)).toHaveAccessibleDescription(/enter your full name/i);
     expect(screen.getByLabelText(/^password/i)).toHaveAccessibleDescription(/at least 8 characters/i);
@@ -167,7 +167,7 @@ describe("RegisterForm", () => {
     renderWithAuth(<RegisterForm />);
     await fill({ email: "citizen@pkonek.demo" });
     await userEvent.click(screen.getByRole("checkbox", { name: /shown publicly/i }));
-    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Create account$/i }));
     await waitFor(() => expect(screen.getByLabelText(/email address/i)).toHaveAccessibleDescription(/already exists/i));
     expect(screen.getByLabelText(/email address/i)).toHaveFocus();
   });
@@ -180,11 +180,11 @@ describe("PasswordInput", () => {
         <PasswordInput />
       </Field>,
     );
-    const input = screen.getByLabelText("Password");
+    const input = screen.getByLabelText(/^Password$/i);
     expect(input).toHaveAttribute("type", "password");
-    await userEvent.click(screen.getByRole("button", { name: "Show password" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Show password$/i }));
     expect(input).toHaveAttribute("type", "text");
-    expect(screen.getByRole("button", { name: "Hide password" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Hide password$/i })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("warns when Caps Lock is on", async () => {
@@ -193,8 +193,8 @@ describe("PasswordInput", () => {
         <PasswordInput />
       </Field>,
     );
-    await userEvent.click(screen.getByLabelText("Password"));
+    await userEvent.click(screen.getByLabelText(/^Password$/i));
     await userEvent.keyboard("{CapsLock}A");
-    expect(screen.getByText("Caps Lock is on")).toBeInTheDocument();
+    expect(screen.getByText(/^Caps Lock is on$/i)).toBeInTheDocument();
   });
 });

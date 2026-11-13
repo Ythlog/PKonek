@@ -5,7 +5,7 @@ import LandingPage from "./page";
 describe("public landing page", () => {
   it("leads with the value proposition and the main call to action", () => {
     render(<LandingPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "Report it. Track it. See it fixed." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /^Report it\. Track it\. See it fixed\.$/i })).toBeInTheDocument();
     const reportLinks = screen.getAllByRole("link", { name: /report an issue/i });
     expect(reportLinks.length).toBeGreaterThan(1);
     reportLinks.forEach((l) => expect(l).toHaveAttribute("href", "/app/report"));
@@ -13,10 +13,10 @@ describe("public landing page", () => {
 
   it("routes each audience to its sign-in", () => {
     render(<LandingPage />);
-    const header = screen.getAllByRole("navigation", { name: "Main" })[0];
-    expect(within(header).getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
-    expect(within(header).getByRole("link", { name: "For officials" })).toHaveAttribute("href", "/staff/login");
-    expect(screen.getByRole("link", { name: "Administrator sign in" })).toHaveAttribute("href", "/staff/login");
+    const header = screen.getAllByRole("navigation", { name: /^Main$/i })[0];
+    expect(within(header).getByRole("link", { name: /^Sign in$/i })).toHaveAttribute("href", "/login");
+    expect(within(header).getByRole("link", { name: /^For officials$/i })).toHaveAttribute("href", "/staff/login");
+    expect(screen.getByRole("link", { name: /^Administrator sign in$/i })).toHaveAttribute("href", "/staff/login");
   });
 
   it("explains the three steps", () => {

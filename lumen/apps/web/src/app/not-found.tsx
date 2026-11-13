@@ -12,7 +12,7 @@ export default function NotFound() {
           <MapPinOff size={28} strokeWidth={1.75} />
         </span>
         <p className="mt-6 text-sm font-semibold text-muted tabular">Error 404</p>
-        <h1 className="mt-1 text-2xl">We couldn&rsquo;t find that page</h1>
+        <h1 className="mt-1 text-2xl">We Couldn&rsquo;t Find That Page</h1>
         <p className="mt-3 text-muted">The link may be broken, or the page may have moved.</p>
         <Link href="/" className={buttonClasses({ className: "mt-8" })}>
           Back to PKonek

@@ -153,7 +153,7 @@ export function CommunityMap() {
 
         <Card padding="none" className="flex max-h-128 flex-col overflow-hidden">
           <div className="border-b border-border px-4 py-3">
-            <h2 className="text-lg">{me ? "Closest to you" : "Most reported"}</h2>
+            <h2 className="text-lg">{me ? "Closest to You" : "Most Reported"}</h2>
             <p className="text-sm text-muted" aria-live="polite">
               {points.data ? `${points.data.length} ${points.data.length === 1 ? "report" : "reports"} on the map` : "Loading…"}
             </p>

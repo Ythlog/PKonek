@@ -13,7 +13,7 @@ describe("Modal", () => {
         <p>Body</p>
       </Modal>,
     );
-    const dialog = screen.getByRole("dialog", { name: "Change status" });
+    const dialog = screen.getByRole("dialog", { name: /^Change status$/i });
     expect(dialog).toHaveAccessibleDescription("Pick the new status.");
     await userEvent.click(screen.getByRole("button", { name: /close/i }));
     fireEvent(dialog, new Event("cancel", { cancelable: true }));
@@ -37,7 +37,7 @@ describe("Drawer", () => {
         details
       </Drawer>,
     );
-    expect(screen.getByRole("dialog", { name: "Complaint PSG-2026-000123" })).toHaveAttribute("data-side", "right");
+    expect(screen.getByRole("dialog", { name: /^Complaint PSG-2026-000123$/i })).toHaveAttribute("data-side", "right");
   });
 });
 
@@ -50,18 +50,18 @@ describe("Tabs", () => {
 
   it("shows the selected panel and moves with arrow keys", async () => {
     render(<Tabs label="Views" items={items} />);
-    expect(screen.getByRole("tab", { name: "List" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^List$/i })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveTextContent("List view");
 
-    screen.getByRole("tab", { name: "List" }).focus();
+    screen.getByRole("tab", { name: /^List$/i }).focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(screen.getByRole("tab", { name: /map/i })).toHaveFocus();
     expect(screen.getByRole("tabpanel")).toHaveTextContent("Map view");
 
     await userEvent.keyboard("{End}");
-    expect(screen.getByRole("tab", { name: "Stats" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Stats$/i })).toHaveAttribute("aria-selected", "true");
     await userEvent.keyboard("{ArrowRight}");
-    expect(screen.getByRole("tab", { name: "List" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^List$/i })).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -94,8 +94,8 @@ describe("Toast", () => {
       </ToastProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    expect(screen.getByText("Report sent")).toBeInTheDocument();
+    expect(screen.getByText(/^Report sent$/i)).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(6000));
-    expect(screen.queryByText("Report sent")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Report sent$/i)).not.toBeInTheDocument();
   });
 });

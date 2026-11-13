@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   /** Strengthens the shadow on hover. Use for clickable cards. Never moves the card. */
@@ -42,7 +43,7 @@ export function CardHeader({ title, description, action, icon, as: Heading = "h3
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <Heading className="text-lg leading-snug">{title}</Heading>
+        <Heading className="text-lg leading-snug">{titleCaseChildren(title)}</Heading>
         {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}

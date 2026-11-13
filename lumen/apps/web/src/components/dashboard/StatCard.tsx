@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 type Tone = "brand" | "info" | "warning" | "success" | "accent";
 
@@ -29,7 +30,7 @@ export function StatCard({ label, value, icon, tone = "brand", hint, loading = f
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-muted">{label}</p>
+        <p className="text-sm font-medium text-muted">{titleCaseChildren(label)}</p>
         {loading ? (
           <Skeleton className="mt-2 h-8 w-16" />
         ) : (

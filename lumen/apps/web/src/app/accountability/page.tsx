@@ -4,7 +4,7 @@ import { PublicFooter, PublicHeader } from "@/components/public/PublicChrome";
 import { SkipLink } from "@/components/shell/SkipLink";
 
 export const metadata: Metadata = {
-  title: "City accountability report",
+  title: "City Accountability Report",
   description: "How Pasig City responds to resident reports: resolution rates and fix times by barangay and category.",
 };
 

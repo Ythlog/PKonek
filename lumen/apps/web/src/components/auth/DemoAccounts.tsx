@@ -19,7 +19,7 @@ export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccount
     <section aria-labelledby="demo-accounts" className="rounded-card border border-dashed border-accent bg-accent/10 p-4">
       <h2 id="demo-accounts" className="flex items-center gap-2 text-sm font-semibold text-ink">
         <KeyRound aria-hidden size={16} strokeWidth={1.75} />
-        Demo accounts
+        Demo Accounts
       </h2>
       <p className="mt-1 text-sm text-muted">
         Password for all: <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code>

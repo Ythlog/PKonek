@@ -145,8 +145,8 @@ export function ComponentGallery() {
             <HandHeart size={12} strokeWidth={2} aria-hidden /> 24 Me Too
           </Badge>
           <Badge tone="info">New</Badge>
-          <Badge tone="success">On time</Badge>
-          <Badge tone="warning">Due in 1 day</Badge>
+          <Badge tone="success">On Time</Badge>
+          <Badge tone="warning">Due in 1 Day</Badge>
           <Badge tone="danger">Overdue</Badge>
         </div>
       </Demo>

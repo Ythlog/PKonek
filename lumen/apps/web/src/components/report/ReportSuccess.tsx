@@ -45,7 +45,7 @@ export function ReportSuccess({ outcome, onReportAnother }: { outcome: ReportOut
           {supported ? <HandHeart size={32} strokeWidth={1.75} /> : <CircleCheck size={32} strokeWidth={1.75} />}
         </span>
         <h2 ref={headingRef} tabIndex={-1} className="mt-5 text-2xl outline-none sm:text-3xl">
-          {supported ? "Your Me Too was added" : "Report sent. Thank you!"}
+          {supported ? "Your Me Too Was Added" : "Report Sent. Thank You!"}
         </h2>
         <p className="mx-auto mt-2 max-w-md text-muted">
           {supported
@@ -79,7 +79,7 @@ export function ReportSuccess({ outcome, onReportAnother }: { outcome: ReportOut
 
       {!supported && (
         <Card>
-          <h3 className="text-lg">What happens next</h3>
+          <h3 className="text-lg">What Happens Next</h3>
           <ol className="mt-4 grid gap-4">
             {nextSteps.map(({ icon: Icon, text }, i) => (
               <li key={text} className="flex items-start gap-3">

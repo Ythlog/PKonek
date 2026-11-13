@@ -70,7 +70,7 @@ describe("RequireRole", () => {
     );
     expect(await screen.findByRole("heading", { name: /don.t have access/i })).toBeInTheDocument();
     expect(screen.getByText(/pasig administrators/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to my home" })).toHaveAttribute("href", "/official");
+    expect(screen.getByRole("link", { name: /^Go to my home$/i })).toHaveAttribute("href", "/official");
     expect(screen.queryByText("secret")).not.toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe("RequireRole", () => {
         <p>secret</p>
       </RequireRole>,
     );
-    await userEvent.click(await screen.findByRole("button", { name: "Switch account" }));
+    await userEvent.click(await screen.findByRole("button", { name: /^Switch account$/i }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/staff/login?next=%2Fofficial"));
     expect(readSession()).toBeNull();
   });
@@ -94,7 +94,7 @@ describe("RequireRole", () => {
         <p>my reports</p>
       </RequireRole>,
     );
-    expect(await screen.findByText("my reports")).toBeInTheDocument();
+    expect(await screen.findByText(/^my reports$/i)).toBeInTheDocument();
   });
 });
 
@@ -103,9 +103,9 @@ describe("CitizenShell", () => {
     await signInAs("citizen@pkonek.demo");
     pathname = "/app/reports";
     renderApp(<CitizenShell>content</CitizenShell>);
-    expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main");
+    expect(screen.getByRole("link", { name: /^Skip to main content$/i })).toHaveAttribute("href", "#main");
     expect(screen.getByRole("main")).toHaveAttribute("id", "main");
-    const navs = screen.getAllByRole("navigation", { name: "Main" });
+    const navs = screen.getAllByRole("navigation", { name: /^Main$/i });
     expect(navs).toHaveLength(2); // desktop top bar + mobile tab bar
     for (const nav of navs) {
       expect(within(nav).getByRole("link", { name: /my reports/i })).toHaveAttribute("aria-current", "page");
@@ -115,8 +115,8 @@ describe("CitizenShell", () => {
   it("offers the four destinations in the mobile tab bar", async () => {
     await signInAs("citizen@pkonek.demo");
     renderApp(<CitizenShell>content</CitizenShell>);
-    const tabBar = screen.getAllByRole("navigation", { name: "Main" })[1];
-    expect(within(tabBar).getAllByRole("link").map((l) => l.textContent)).toEqual(["Home", "Report", "My reports", "Map"]);
+    const tabBar = screen.getAllByRole("navigation", { name: /^Main$/i })[1];
+    expect(within(tabBar).getAllByRole("link").map((l) => l.textContent)).toEqual(["Home", "Report", "My Reports", "Map"]);
   });
 
   it("signs out from the account menu", async () => {
@@ -124,7 +124,7 @@ describe("CitizenShell", () => {
     renderApp(<CitizenShell>content</CitizenShell>);
     await userEvent.click(await screen.findByRole("button", { name: /account menu for juan dela cruz/i }));
     expect(screen.getByText("citizen@pkonek.demo")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await userEvent.click(screen.getByRole("button", { name: /^Sign out$/i }));
     await waitFor(() => expect(readSession()).toBeNull());
   });
 
@@ -145,20 +145,20 @@ describe("StaffShell", () => {
     await signInAs("admin@pkonek.demo");
     pathname = "/admin/users";
     renderApp(<StaffShell role="pasig_admin">content</StaffShell>);
-    const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getByRole("link", { name: "Users" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByText("Administration")).toBeInTheDocument();
-    expect(screen.getByText("City administration")).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: /^Workspace$/i });
+    expect(within(nav).getByRole("link", { name: /^Users$/i })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByText(/^Administration$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^City administration$/i)).toBeInTheDocument();
   });
 
   it("scopes officials to their barangay and hides admin tools", async () => {
     await signInAs("official@pkonek.demo");
     pathname = "/official";
     renderApp(<StaffShell role="official">content</StaffShell>);
-    expect(await screen.findByText("Barangay Kapitolyo")).toBeInTheDocument();
-    const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).queryByRole("link", { name: "Users" })).not.toBeInTheDocument();
+    expect(await screen.findByText(/^Barangay Kapitolyo$/i)).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: /^Workspace$/i });
+    expect(within(nav).getByRole("link", { name: /^Dashboard$/i })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).queryByRole("link", { name: /^Users$/i })).not.toBeInTheDocument();
   });
 
   it("searches complaints from the top bar", async () => {
@@ -166,14 +166,14 @@ describe("StaffShell", () => {
     renderApp(<StaffShell role="official">content</StaffShell>);
     const search = screen.getByRole("search");
     expect(search).toHaveAttribute("action", "/official/complaints");
-    expect(within(search).getByLabelText("Search complaints")).toHaveAttribute("name", "q");
+    expect(within(search).getByLabelText(/^Search complaints$/i)).toHaveAttribute("name", "q");
   });
 
   it("opens the navigation drawer on small screens", async () => {
     await signInAs("official@pkonek.demo");
     renderApp(<StaffShell role="official">content</StaffShell>);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    const drawer = screen.getByRole("dialog", { name: "PKonek workspace" });
-    expect(within(drawer).getByRole("link", { name: "Complaints" })).toHaveAttribute("href", "/official/complaints");
+    await userEvent.click(screen.getByRole("button", { name: /^Open navigation$/i }));
+    const drawer = screen.getByRole("dialog", { name: /^PKonek workspace$/i });
+    expect(within(drawer).getByRole("link", { name: /^Complaints$/i })).toHaveAttribute("href", "/official/complaints");
   });
 });

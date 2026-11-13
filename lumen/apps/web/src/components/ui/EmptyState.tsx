@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { titleCaseChildren } from "@/lib/text";
 
 type EmptyStateProps = {
   icon?: ReactNode;
@@ -18,7 +19,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
           {icon}
         </span>
       )}
-      <h3 className="text-lg">{title}</h3>
+      <h3 className="text-lg">{titleCaseChildren(title)}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-muted">{description}</p>}
       {action && <div className="mt-6">{action}</div>}
     </div>

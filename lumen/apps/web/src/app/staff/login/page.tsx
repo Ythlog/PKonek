@@ -5,7 +5,7 @@ import { AuthLayout, AuthLink } from "@/components/auth/AuthLayout";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { CITIZEN_LOGIN } from "@/lib/auth/routes";
 
-export const metadata: Metadata = { title: "Staff sign in" };
+export const metadata: Metadata = { title: "Staff Sign In" };
 
 export default function StaffLoginPage() {
   return (
@@ -17,7 +17,7 @@ export default function StaffLoginPage() {
         <>
           <p>Staff accounts are created by your Pasig administrator.</p>
           <p>
-            Pasig resident? <AuthLink href={CITIZEN_LOGIN}>Sign in here</AuthLink>
+            Pasig resident? <AuthLink href={CITIZEN_LOGIN}>Sign In Here</AuthLink>
           </p>
         </>
       }

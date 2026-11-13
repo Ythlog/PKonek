@@ -14,11 +14,13 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { titleCase } from "@/lib/text";
 import { Logo } from "@/components/brand/Logo";
 import { ComponentGallery } from "./ComponentGallery";
 import { colorGroups, radii, shadows, spacingSteps, statusTokens, typeScale } from "@/lib/design-tokens";
 
-export const metadata: Metadata = { title: "Design system" };
+
+export const metadata: Metadata = { title: "Design System" };
 
 const icons = [
   { Icon: Megaphone, name: "Report" },
@@ -39,7 +41,7 @@ function Section({ id, title, description, children }: { id: string; title: stri
   return (
     <section aria-labelledby={id} className="border-t border-border py-12 first:border-t-0">
       <h2 id={id} className="text-2xl">
-        {title}
+        {titleCase(title)}
       </h2>
       <p className="mt-1 max-w-2xl text-muted">{description}</p>
       <div className="mt-6">{children}</div>
@@ -55,7 +57,7 @@ export default function StyleguidePage() {
           <Logo size="md" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-accent">PKonek</p>
-            <h1 className="mt-2 text-3xl text-white sm:text-4xl">Design system</h1>
+            <h1 className="mt-2 text-3xl text-white sm:text-4xl">Design System</h1>
             <p className="mt-3 max-w-2xl text-lg text-brand-50">
               One set of tokens for citizens, officials and administrators. Components use these tokens
               only, so every screen stays consistent.

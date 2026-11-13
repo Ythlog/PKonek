@@ -94,14 +94,14 @@ describe("ComplaintsWorkspace", () => {
   it("scopes an official to their barangay by default", async () => {
     await setup();
     await waitFor(() => expect(within(table()).getAllByRole("row")).toHaveLength(kapitolyo.length + 1));
-    expect(screen.getByText("Barangay Kapitolyo")).toBeInTheDocument();
-    expect(screen.getByLabelText("Barangay")).toHaveValue("Kapitolyo");
+    expect(screen.getByText(/^Barangay Kapitolyo$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Barangay$/i)).toHaveValue("Kapitolyo");
   });
 
   it("filters by status and keeps it in the URL", async () => {
     const u = await setup();
     await waitFor(() => table());
-    await u.click(screen.getByRole("button", { name: "Open", pressed: false }));
+    await u.click(screen.getByRole("button", { name: /^Open$/i, pressed: false }));
     expect(url.get()).toBe("status=open");
     const open = kapitolyo.filter((c) => c.status === "open");
     await waitFor(() => expect(rowTitles()).toHaveLength(open.length));
@@ -111,10 +111,10 @@ describe("ComplaintsWorkspace", () => {
   it("shows every barangay when the official switches to all", async () => {
     const u = await setup();
     await waitFor(() => table());
-    await u.selectOptions(screen.getByLabelText("Barangay"), "");
+    await u.selectOptions(screen.getByLabelText(/^Barangay$/i), "");
     expect(url.get()).toBe("barangay=all");
     await waitFor(() => expect(screen.getByText(/showing 1–20 of 30/i)).toBeInTheDocument());
-    await u.click(screen.getByRole("button", { name: "Next" }));
+    await u.click(screen.getByRole("button", { name: /^Next$/i }));
     expect(url.get()).toBe("barangay=all&page=2");
     await waitFor(() => expect(screen.getByText(/showing 21–30 of 30/i)).toBeInTheDocument());
   });
@@ -122,7 +122,7 @@ describe("ComplaintsWorkspace", () => {
   it("searches after typing pauses", async () => {
     const u = await setup("admin@pkonek.demo");
     await waitFor(() => table());
-    await u.type(screen.getByRole("searchbox", { name: "Search complaints" }), "streetlight");
+    await u.type(screen.getByRole("searchbox", { name: /^Search complaints$/i }), "streetlight");
     await waitFor(() => expect(url.get()).toBe("q=streetlight"), { timeout: 2000 });
     await waitFor(() => expect(rowTitles().every((t) => /streetlight|lamp|light/i.test(t ?? ""))).toBe(true));
   });
@@ -142,18 +142,18 @@ describe("ComplaintsWorkspace", () => {
     expect(within(drawer).getByText(target.reporter_name!)).toBeInTheDocument();
 
     const statusSelect = within(drawer).getByLabelText(/new status/i);
-    expect(within(statusSelect).getAllByRole("option").map((o) => o.textContent)).toEqual(["In progress", "Resolved", "Rejected"]);
+    expect(within(statusSelect).getAllByRole("option").map((o) => o.textContent)).toEqual(["In Progress", "Resolved", "Rejected"]);
     await u.type(within(drawer).getByLabelText(/note for the record/i), "Crew assigned");
     await u.click(within(drawer).getByRole("button", { name: /mark as in progress/i }));
     expect(await screen.findByText(/status changed to in progress/i)).toBeInTheDocument();
-    await waitFor(() => expect(within(drawer).getAllByText("Crew assigned").length).toBeGreaterThan(0));
+    await waitFor(() => expect(within(drawer).getAllByText(/^Crew assigned$/i).length).toBeGreaterThan(0));
     expect(within(within(drawer).getByLabelText(/new status/i)).getAllByRole("option").map((o) => o.textContent)).toEqual(["Resolved", "Rejected"]);
 
-    await u.click(within(drawer).getByRole("button", { name: "Post update" }));
+    await u.click(within(drawer).getByRole("button", { name: /^Post update$/i }));
     expect(within(drawer).getByLabelText(/^update/i)).toHaveAccessibleDescription(/write the update first/i);
     await u.type(within(drawer).getByLabelText(/^update/i), "We'll be there Wednesday.");
-    await u.click(within(drawer).getByRole("button", { name: "Post update" }));
-    expect(await within(drawer).findByText("We'll be there Wednesday.")).toBeInTheDocument();
+    await u.click(within(drawer).getByRole("button", { name: /^Post update$/i }));
+    expect(await within(drawer).findByText(/^We'll be there Wednesday\.$/i)).toBeInTheDocument();
 
     const timeline = await holder.api.complaints.timeline(target.id);
     expect(timeline[0]).toMatchObject({ type: "response", detail: "We'll be there Wednesday.", is_public: true });
@@ -166,8 +166,8 @@ describe("ComplaintsWorkspace", () => {
     await within(drawer).findByText(target.title);
     await u.click(within(drawer).getByRole("checkbox", { name: /visible to residents/i }));
     await u.type(within(drawer).getByLabelText(/^update/i), "Check with the hauler first.");
-    await u.click(within(drawer).getByRole("button", { name: "Save note" }));
-    expect(await within(drawer).findByText("Staff only")).toBeInTheDocument();
+    await u.click(within(drawer).getByRole("button", { name: /^Save note$/i }));
+    expect(await within(drawer).findByText(/^Staff only$/i)).toBeInTheDocument();
   });
 
   it("explains that closed complaints can't change", async () => {
@@ -180,7 +180,7 @@ describe("ComplaintsWorkspace", () => {
   it("closes the drawer and clears it from the URL", async () => {
     const u = await setup("official@pkonek.demo", `selected=${kapitolyo[0].id}`);
     const drawer = await screen.findByRole("dialog");
-    await u.click(within(drawer).getByRole("button", { name: "Close" }));
+    await u.click(within(drawer).getByRole("button", { name: /^Close$/i }));
     expect(url.get()).toBe("");
     await act(async () => {});
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("ComplaintsWorkspace", () => {
     const drawer = await screen.findByRole("dialog");
     await within(drawer).findByText(target.title);
     await u.upload(within(drawer).getByLabelText(/choose a progress photo/i), new File([new Uint8Array(64)], "crew.png", { type: "image/png" }));
-    expect(await screen.findByText("Progress photo added")).toBeInTheDocument();
+    expect(await screen.findByText(/^Progress photo added$/i)).toBeInTheDocument();
     expect((await holder.api.complaints.timeline(target.id))[0].type).toBe("media");
   });
 });

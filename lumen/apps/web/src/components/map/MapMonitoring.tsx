@@ -120,7 +120,7 @@ export function MapMonitoring({ role }: { role: "official" | "pasig_admin" }) {
                   {c.reference_no} · {c.report_count} reports
                 </p>
                 <Link href={`${base}/complaints?selected=${c.id}`} className="text-sm font-semibold text-brand-600">
-                  Open complaint
+                  Open Complaint
                 </Link>
               </div>
             )}
@@ -131,7 +131,7 @@ export function MapMonitoring({ role }: { role: "official" | "pasig_admin" }) {
 
       <Card padding="none" className="flex max-h-128 flex-col overflow-hidden">
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-lg">{mode === "hotspots" ? "Top hotspots" : "Complaints on the map"}</h2>
+          <h2 className="text-lg">{mode === "hotspots" ? "Top Hotspots" : "Complaints on the Map"}</h2>
           <p className="text-sm text-muted" aria-live="polite">
             {points.data
               ? mode === "hotspots"

@@ -86,7 +86,7 @@ describe("ReportWizard", () => {
     await screen.findByRole("radio", { name: /roads and potholes/i });
     await u.click(continueButton());
     expect(screen.getByRole("heading", { name: /what kind of problem/i })).toBeInTheDocument();
-    expect(screen.getByText("Choose a category to continue.")).toBeInTheDocument();
+    expect(screen.getByText(/^Choose a category to continue\.$/i)).toBeInTheDocument();
   });
 
   it("files a complete report and shows the reference number", async () => {
@@ -96,11 +96,11 @@ describe("ReportWizard", () => {
 
     expect(screen.getByRole("heading", { name: /where is it/i })).toHaveFocus();
     await u.click(continueButton());
-    expect(screen.getByText("Place a pin on the map to continue.")).toBeInTheDocument();
+    expect(screen.getByText(/^Place a pin on the map to continue\.$/i)).toBeInTheDocument();
 
     await u.click(screen.getByRole("button", { name: "map: clear spot" }));
-    expect(screen.getByText("Pin placed")).toBeInTheDocument();
-    expect(screen.getByLabelText("Barangay")).not.toHaveValue("");
+    expect(screen.getByText(/^Pin placed$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Barangay$/i)).not.toHaveValue("");
     await u.type(screen.getByLabelText(/street or landmark/i), "Near the overpass");
     await u.click(continueButton());
 
@@ -111,14 +111,14 @@ describe("ReportWizard", () => {
     await u.click(continueButton());
 
     expect(screen.getByRole("heading", { name: /add a photo/i })).toBeInTheDocument();
-    await u.click(screen.getByRole("button", { name: "Skip photo" }));
+    await u.click(screen.getByRole("button", { name: /^Skip photo$/i }));
 
     const review = screen.getByRole("heading", { name: /check and send/i }).closest("div")!.parentElement!;
-    expect(within(review).getByText("Roads and Potholes")).toBeInTheDocument();
-    expect(within(review).getByText("Deep pothole on Marcos Highway")).toBeInTheDocument();
-    expect(within(review).getByText("No photo")).toBeInTheDocument();
+    expect(within(review).getByText(/^Roads and Potholes$/i)).toBeInTheDocument();
+    expect(within(review).getByText(/^Deep pothole on Marcos Highway$/i)).toBeInTheDocument();
+    expect(within(review).getByText(/^No photo$/i)).toBeInTheDocument();
 
-    await u.click(screen.getByRole("button", { name: "Send report" }));
+    await u.click(screen.getByRole("button", { name: /^Send report$/i }));
     expect(await screen.findByRole("heading", { name: /report sent/i })).toBeInTheDocument();
     const reference = screen.getByText(/^PSG-\d{4}-000031$/);
     expect(reference).toBeInTheDocument();
@@ -180,12 +180,12 @@ describe("ReportWizard", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/JPG, PNG or WebP/);
 
     await u.upload(input, new File([new Uint8Array(2048)], "dumping.jpg", { type: "image/jpeg" }));
-    expect(screen.getByText("dumping.jpg")).toBeInTheDocument();
+    expect(screen.getByText(/^dumping\.jpg$/i)).toBeInTheDocument();
     expect(screen.getByText("2 KB")).toBeInTheDocument();
     await u.click(continueButton());
 
-    expect(screen.getByText("dumping.jpg")).toBeInTheDocument();
-    await u.click(screen.getByRole("button", { name: "Send report" }));
+    expect(screen.getByText(/^dumping\.jpg$/i)).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: /^Send report$/i }));
     await screen.findByRole("heading", { name: /report sent/i });
     await waitFor(async () => expect((await holder.api.complaints.get(31)).photo_url).toMatch(/^data:image\/jpeg/));
   });

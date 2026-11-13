@@ -5,14 +5,14 @@ import { Logo, LOGO_SRC } from "./Logo";
 describe("Logo", () => {
   it("renders the logo image with alt text", () => {
     render(<Logo />);
-    expect(screen.getByRole("img", { name: "PKonek" })).toHaveAttribute("src", LOGO_SRC);
+    expect(screen.getByRole("img", { name: /^PKonek$/i })).toHaveAttribute("src", LOGO_SRC);
   });
 
   it("falls back to a text wordmark when the image fails to load", () => {
     render(<Logo />);
-    fireEvent.error(screen.getByRole("img", { name: "PKonek" }));
+    fireEvent.error(screen.getByRole("img", { name: /^PKonek$/i }));
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(screen.getByText("PKonek")).toBeInTheDocument();
+    expect(screen.getByText(/^PKonek$/i)).toBeInTheDocument();
   });
 
   it("wraps the logo in a brand badge for light backgrounds", () => {

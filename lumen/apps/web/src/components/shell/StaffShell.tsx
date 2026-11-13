@@ -110,7 +110,7 @@ export function StaffShell({ role, children }: { role: StaffRole; children: Reac
             className="flex min-h-touch items-center gap-3 rounded-control px-3 text-sm font-medium text-brand-50/80 transition-colors hover:bg-white/8 hover:text-white"
           >
             <ExternalLink aria-hidden size={18} strokeWidth={1.75} />
-            Public site
+            Public Site
           </Link>
         </div>
       </aside>

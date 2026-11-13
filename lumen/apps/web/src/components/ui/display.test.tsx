@@ -13,7 +13,7 @@ import { StatusBadge } from "./StatusBadge";
 describe("StatusBadge", () => {
   it.each([
     ["open", "Open", "text-status-open"],
-    ["in_progress", "In progress", "text-status-in-progress"],
+    ["in_progress", "In Progress", "text-status-in-progress"],
     ["resolved", "Resolved", "text-status-resolved"],
     ["rejected", "Rejected", "text-status-rejected"],
   ] as const)("maps backend status %s to a labelled pill", (status, label, cls) => {
@@ -69,15 +69,15 @@ describe("Card", () => {
 describe("EmptyState", () => {
   it("suggests the next action", () => {
     render(<EmptyState title="No reports yet" description="Your reports appear here." action={<button>Report an issue</button>} />);
-    expect(screen.getByRole("heading", { name: "No reports yet" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Report an issue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^No reports yet$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Report an issue$/i })).toBeInTheDocument();
   });
 });
 
 describe("Avatar", () => {
   it("shows initials with the full name as the accessible label", () => {
     render(<Avatar name="Juan dela Cruz" />);
-    expect(screen.getByRole("img", { name: "Juan dela Cruz" })).toHaveTextContent("JC");
+    expect(screen.getByRole("img", { name: /^Juan dela Cruz$/i })).toHaveTextContent("JC");
   });
 });
 

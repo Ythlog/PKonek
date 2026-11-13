@@ -11,7 +11,7 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "PKonek · Pasig City civic reporting",
+    default: "PKonek · Pasig City Civic Reporting",
     template: "%s · PKonek",
   },
   description:

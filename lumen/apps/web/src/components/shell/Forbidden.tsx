@@ -19,7 +19,7 @@ export function Forbidden({ allowed }: { allowed: Role[] }) {
           <ShieldAlert size={28} strokeWidth={1.75} />
         </span>
         <p className="mt-6 text-sm font-semibold text-muted tabular">Error 403</p>
-        <h1 className="mt-1 text-2xl">You don&rsquo;t have access to this page</h1>
+        <h1 className="mt-1 text-2xl">You Don&rsquo;t Have Access to This Page</h1>
         <p className="mt-3 text-muted">
           This area is for {areaFor}.
           {user && (
@@ -32,7 +32,7 @@ export function Forbidden({ allowed }: { allowed: Role[] }) {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {user && (
             <Link href={homePathFor(user.role)} className={buttonClasses()}>
-              Go to my home
+              Go to My Home
             </Link>
           )}
           <Button variant="secondary" onClick={() => logout()}>

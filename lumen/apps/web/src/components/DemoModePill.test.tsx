@@ -5,7 +5,7 @@ import { DemoModePill } from "./DemoModePill";
 describe("DemoModePill", () => {
   it("shows when mock mode is on", () => {
     render(<DemoModePill enabled />);
-    expect(screen.getByText("Demo data")).toBeInTheDocument();
+    expect(screen.getByText(/^Demo data$/i)).toBeInTheDocument();
   });
 
   it("renders nothing against the real API", () => {

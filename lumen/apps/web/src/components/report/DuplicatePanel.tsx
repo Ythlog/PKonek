@@ -35,7 +35,7 @@ export function DuplicatePanel({ candidates, radiusM, onSupport, supportingId, o
         </span>
         <div>
           <h3 id="duplicate-heading" className="text-lg text-ink">
-            {count === 1 ? "Someone already reported this nearby" : `${count} similar reports nearby`}
+            {count === 1 ? "Someone Already Reported This Nearby" : `${count} Similar Reports Nearby`}
           </h3>
           <p className="mt-0.5 text-sm text-muted">
             {blocking

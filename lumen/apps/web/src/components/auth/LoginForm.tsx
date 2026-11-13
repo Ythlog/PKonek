@@ -91,7 +91,7 @@ export function LoginForm({ area }: { area: Area }) {
   const signedInElsewhere = area === "staff" && status === "authenticated" && role === "citizen";
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       {endReason === "expired" && !formError && (
         <Alert tone="info" title="Your session ended">
           For your security you were signed out after a period of time. Please sign in again.
@@ -129,7 +129,7 @@ export function LoginForm({ area }: { area: Area }) {
         </Alert>
       )}
 
-      <form noValidate onSubmit={onSubmit} className="grid gap-5" aria-label={area === "staff" ? "Staff sign in" : "Resident sign in"}>
+      <form noValidate onSubmit={onSubmit} className="grid gap-4" aria-label={area === "staff" ? "Staff sign in" : "Resident sign in"}>
         <Field label={area === "staff" ? "Work email" : "Email address"} error={errors.email} required>
           <Input
             ref={emailRef}

@@ -16,15 +16,15 @@ export function DemoAccounts({ roles, onPick, enabled = USE_MOCKS }: DemoAccount
   if (!enabled) return null;
   const accounts = DEMO_ACCOUNTS.filter((a) => roles.includes(a.role));
   return (
-    <section aria-labelledby="demo-accounts" className="rounded-card border border-dashed border-accent bg-accent/10 p-4">
-      <h2 id="demo-accounts" className="flex items-center gap-2 text-sm font-semibold text-ink">
+    <section aria-labelledby="demo-accounts" className="rounded-card border border-dashed border-accent bg-accent/10 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <h2 id="demo-accounts" className="flex items-center gap-2 text-sm font-semibold text-ink">
         <KeyRound aria-hidden size={16} strokeWidth={1.75} />
         Demo Accounts
       </h2>
-      <p className="mt-1 text-sm text-muted">
-        Password for all: <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code>
-      </p>
-      <ul className="mt-3 grid gap-2">
+        <p className="text-xs text-muted">Password: <code className="font-mono font-semibold text-ink">{DEMO_PASSWORD}</code></p>
+      </div>
+      <ul className="mt-2 grid gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
         {accounts.map((a) => (
           <li key={a.email}>
             <button

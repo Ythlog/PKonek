@@ -44,7 +44,7 @@ type AuthLayoutProps = {
 export function AuthLayout({ audience, title, description, children, footer }: AuthLayoutProps) {
   const copy = panelCopy[audience];
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <div className="min-h-dvh lg:grid lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:overflow-hidden">
       {/* Brand panel (desktop) / header (mobile) */}
       <aside className="relative isolate overflow-hidden bg-brand-700 text-white">
         <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 -z-10 size-80 rounded-full bg-brand-600/60 blur-3xl" />
@@ -78,15 +78,15 @@ export function AuthLayout({ audience, title, description, children, footer }: A
       </aside>
 
       {/* Form side */}
-      <main id="main" className="flex flex-col items-center px-4 py-8 sm:px-6 sm:py-12 lg:justify-center lg:py-16">
+      <main id="main" className="flex flex-col items-center px-4 py-6 sm:px-6 sm:py-8 lg:justify-center lg:overflow-y-auto lg:py-6">
         <div className="w-full max-w-md">
           <p className="text-xs font-semibold uppercase tracking-eyebrow text-brand-600 lg:hidden">{copy.eyebrow}</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl">{titleCase(title)}</h1>
-          {description && <p className="mt-2 text-muted">{description}</p>}
+          <h1 className="mt-1 text-2xl">{titleCase(title)}</h1>
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
 
-          <div className="mt-6 rounded-panel border border-border bg-surface p-5 shadow-card sm:p-8">{children}</div>
+          <div className="mt-4 rounded-panel border border-border bg-surface p-5 shadow-card sm:p-6">{children}</div>
 
-          {footer && <div className="mt-6 flex flex-col items-center gap-2 text-center text-sm text-muted">{footer}</div>}
+          {footer && <div className="mt-4 flex flex-col items-center gap-1 text-center text-sm text-muted">{footer}</div>}
         </div>
       </main>
     </div>

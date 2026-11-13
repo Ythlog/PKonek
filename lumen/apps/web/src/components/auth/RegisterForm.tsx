@@ -88,13 +88,13 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       {formError && (
         <Alert tone="danger" title="We couldn't create your account">
           {formError}
         </Alert>
       )}
-      <form ref={formRef} noValidate onSubmit={onSubmit} aria-label="Create a resident account" className="grid gap-5">
+      <form ref={formRef} noValidate onSubmit={onSubmit} aria-label="Create a resident account" className="grid gap-3.5">
         <Field label="Full name" error={errors.full_name} required>
           <Input
             name="full_name"
@@ -106,7 +106,7 @@ export function RegisterForm() {
           />
         </Field>
 
-        <Field label="Email address" error={errors.email} helper="We'll send status updates here." required>
+        <Field label="Email address" error={errors.email} required>
           <Input
             name="email"
             type="email"
@@ -121,7 +121,7 @@ export function RegisterForm() {
           />
         </Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-3.5 sm:grid-cols-2">
           <Field label="Barangay" hint="Optional" error={errors.barangay}>
             <Select name="barangay" value={values.barangay} onChange={(e) => set("barangay", e.target.value)}>
               <option value="">Select your barangay</option>
@@ -146,6 +146,8 @@ export function RegisterForm() {
           </Field>
         </div>
 
+        <div className="grid gap-3.5 sm:grid-cols-2">
+
         <Field label="Password" helper="At least 8 characters." error={errors.password} required>
           <PasswordInput
             name="password"
@@ -163,11 +165,12 @@ export function RegisterForm() {
             onChange={(e) => set("confirm_password", e.target.value)}
           />
         </Field>
+        </div>
 
         <Checkbox
           name="accept_terms"
           label="I agree that my reports and their locations can be shown publicly"
-          description="Your name and contact details are only visible to officials."
+          description="Your name and contact stay visible to officials only."
           error={errors.accept_terms}
           checked={values.accept_terms}
           onChange={(e) => set("accept_terms", e.target.checked)}
